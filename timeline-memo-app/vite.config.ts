@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => ({
   
   // GitHub Pages用のベースパス設定
   base: process.env.NODE_ENV === 'production' && process.env.GITHUB_PAGES 
-    ? '/timeline-memo-app/' 
+    ? '/timeline-memo/' 
     : '/',
   
   // バンドル最適化設定

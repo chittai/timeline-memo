@@ -35,11 +35,9 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Test coverage (not used)
 coverage/
 *.lcov
-
-# nyc test coverage
 .nyc_output
 
 # Dependency directories
@@ -98,7 +96,7 @@ temp/
 *.sln
 *.sw?
 
-# Playwright
+# Test results (not used)
 test-results/
 playwright-report/
 playwright/.cache/

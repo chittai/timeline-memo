@@ -22,7 +22,7 @@ git add .
 git commit -m "初回コミット: タイムラインメモアプリの実装完了"
 
 # GitHubリポジトリのURLを設定（YOUR_USERNAMEを実際のユーザー名に変更）
-git remote add origin https://github.com/YOUR_USERNAME/timeline-memo-app.git
+git remote add origin https://github.com/YOUR_USERNAME/timeline-memo.git
 
 # mainブランチにプッシュ
 git branch -M main
