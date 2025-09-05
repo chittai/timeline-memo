@@ -97,6 +97,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         toasts: []
       };
 
+    case 'SET_VIEW_MODE':
+      return {
+        ...state,
+        viewMode: action.payload
+      };
+
     // 日記機能用の新規アクションハンドラー
     case 'SET_SELECTED_DATE':
       return {
