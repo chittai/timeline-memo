@@ -3,6 +3,7 @@ import type { AppState, AppAction } from '../types';
 
 // 初期状態の定義
 const initialState: AppState = {
+  // 既存の投稿関連状態
   posts: [],
   selectedPostId: null,
   highlightedPostIds: [],
@@ -11,12 +12,13 @@ const initialState: AppState = {
   },
   error: null,
   toasts: [],
-  viewMode: 'timeline',
+  viewMode: 'timeline', // デフォルトはタイムラインビュー
+  
   // 日記機能用の新規フィールド
-  selectedDate: null,
-  diaryEntries: [],
-  calendarData: [],
-  diaryStats: null
+  selectedDate: null,        // 選択された日付（カレンダービューで使用）
+  diaryEntries: [],          // 日付ごとにグループ化された投稿エントリー
+  calendarData: [],          // カレンダー表示用のデータ
+  diaryStats: null           // 投稿統計情報
 };
 
 // Reducerの実装
@@ -34,7 +36,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         posts: [action.payload, ...state.posts], // 新しい投稿を先頭に追加
-        error: null
+        error: null,
+        // 投稿が追加されたら日記関連のデータをクリアして再計算を促す
+        diaryEntries: [],
+        calendarData: [],
+        diaryStats: null
       };
 
     case 'UPDATE_POST':
@@ -43,7 +49,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         posts: state.posts.map(post => 
           post.id === action.payload.id ? action.payload : post
         ),
-        error: null
+        error: null,
+        // 投稿が更新されたら日記関連のデータをクリアして再計算を促す
+        diaryEntries: [],
+        calendarData: [],
+        diaryStats: null
       };
 
     case 'DELETE_POST':
@@ -51,7 +61,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         posts: state.posts.filter(post => post.id !== action.payload),
         selectedPostId: state.selectedPostId === action.payload ? null : state.selectedPostId,
-        error: null
+        error: null,
+        // 投稿が削除されたら日記関連のデータをクリアして再計算を促す
+        diaryEntries: [],
+        calendarData: [],
+        diaryStats: null
       };
 
     case 'SELECT_POST':
@@ -60,10 +74,22 @@ function appReducer(state: AppState, action: AppAction): AppState {
         selectedPostId: action.payload
       };
 
+    case 'HIGHLIGHT_POST':
+      return {
+        ...state,
+        highlightedPostIds: [action.payload]
+      };
+
     case 'HIGHLIGHT_POSTS':
       return {
         ...state,
         highlightedPostIds: action.payload
+      };
+
+    case 'CLEAR_HIGHLIGHT':
+      return {
+        ...state,
+        highlightedPostIds: []
       };
 
     case 'SET_LOADING':
@@ -77,6 +103,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         error: action.payload,
         loading: { isLoading: false }
+      };
+
+    case 'CLEAR_ERROR':
+      return {
+        ...state,
+        error: null
       };
 
     case 'ADD_TOAST':
@@ -100,16 +132,23 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_VIEW_MODE':
       return {
         ...state,
-        viewMode: action.payload
+        viewMode: action.payload,
+        // ビューモード変更時にハイライトをクリア
+        highlightedPostIds: [],
+        // 日記ビューやカレンダービューに切り替える場合、選択状態をクリア
+        selectedPostId: action.payload === 'diary' || action.payload === 'calendar' ? null : state.selectedPostId
       };
 
     // 日記機能用の新規アクションハンドラー
+    
+    // 選択された日付の設定（カレンダービューで使用）
     case 'SET_SELECTED_DATE':
       return {
         ...state,
         selectedDate: action.payload
       };
 
+    // 日記エントリーの読み込み（日付ごとにグループ化された投稿）
     case 'LOAD_DIARY_ENTRIES':
       return {
         ...state,
@@ -118,6 +157,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         error: null
       };
 
+    // カレンダーデータの読み込み（月別のカレンダー表示用）
     case 'LOAD_CALENDAR_DATA':
       return {
         ...state,
@@ -126,6 +166,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         error: null
       };
 
+    // 日記統計の読み込み（投稿数、継続日数など）
     case 'LOAD_DIARY_STATS':
       return {
         ...state,
