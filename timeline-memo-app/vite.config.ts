@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => ({
   
   // バンドル最適化設定
   build: {
+    // GitHub Pages用：ルートレベルに出力
+    outDir: '../dist',
+    emptyOutDir: true,
+    
     // チャンクサイズの警告しきい値を調整
     chunkSizeWarningLimit: 1000,
     
