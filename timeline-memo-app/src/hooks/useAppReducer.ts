@@ -11,7 +11,12 @@ const initialState: AppState = {
   },
   error: null,
   toasts: [],
-  viewMode: 'timeline'
+  viewMode: 'timeline',
+  // 日記機能用の新規フィールド
+  selectedDate: null,
+  diaryEntries: [],
+  calendarData: [],
+  diaryStats: null
 };
 
 // Reducerの実装
@@ -90,6 +95,37 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         toasts: []
+      };
+
+    // 日記機能用の新規アクションハンドラー
+    case 'SET_SELECTED_DATE':
+      return {
+        ...state,
+        selectedDate: action.payload
+      };
+
+    case 'LOAD_DIARY_ENTRIES':
+      return {
+        ...state,
+        diaryEntries: action.payload,
+        loading: { isLoading: false },
+        error: null
+      };
+
+    case 'LOAD_CALENDAR_DATA':
+      return {
+        ...state,
+        calendarData: action.payload,
+        loading: { isLoading: false },
+        error: null
+      };
+
+    case 'LOAD_DIARY_STATS':
+      return {
+        ...state,
+        diaryStats: action.payload,
+        loading: { isLoading: false },
+        error: null
       };
 
     default:

@@ -35,6 +35,38 @@ export interface TimelineMarkerData {
   position: number;     // 時間軸上の位置（%）
 }
 
+// 日記機能用の型定義
+export interface DiaryEntry {
+  date: string; // YYYY-MM-DD形式
+  posts: Post[];
+  postCount: number;
+}
+
+export interface CalendarDay {
+  date: Date;
+  hasPost: boolean;
+  postCount: number;
+  isToday: boolean;
+  isSelected: boolean;
+}
+
+export interface DiaryStats {
+  totalPosts: number;
+  totalDays: number;
+  currentStreak: number;
+  longestStreak: number;
+  thisMonthPosts: number;
+  averagePostsPerDay: number;
+}
+
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+// ビューモードの拡張
+export type ViewMode = 'timeline' | 'list' | 'diary' | 'calendar';
+
 // Application state management
 export interface AppState {
   posts: Post[];
@@ -43,7 +75,12 @@ export interface AppState {
   loading: LoadingState;
   error: string | null;
   toasts: Toast[];
-  viewMode: 'timeline' | 'list';
+  viewMode: ViewMode; // 'timeline' | 'list' から ViewMode に変更
+  // 日記機能用の新規フィールド
+  selectedDate: Date | null;
+  diaryEntries: DiaryEntry[];
+  calendarData: CalendarDay[];
+  diaryStats: DiaryStats | null;
 }
 
 // State management actions
@@ -62,7 +99,12 @@ export type AppAction =
   | { type: 'ADD_TOAST'; payload: Toast }
   | { type: 'REMOVE_TOAST'; payload: string }
   | { type: 'CLEAR_TOASTS' }
-  | { type: 'SET_VIEW_MODE'; payload: 'timeline' | 'list' };
+  | { type: 'SET_VIEW_MODE'; payload: ViewMode }
+  // 日記機能用の新規アクション
+  | { type: 'SET_SELECTED_DATE'; payload: Date | null }
+  | { type: 'LOAD_DIARY_ENTRIES'; payload: DiaryEntry[] }
+  | { type: 'LOAD_CALENDAR_DATA'; payload: CalendarDay[] }
+  | { type: 'LOAD_DIARY_STATS'; payload: DiaryStats };
 
 // Data service interface for abstraction
 export interface DataService {
@@ -80,6 +122,20 @@ export interface DataService {
   subscribeToUpdates?(callback: (posts: Post[]) => void): () => void;
 }
 
+// 日記サービスインターフェース
+export interface DiaryService {
+  // 日記エントリー関連
+  getEntriesByDateRange(start: Date, end: Date): Promise<DiaryEntry[]>;
+  getEntryByDate(date: Date): Promise<DiaryEntry | null>;
+  
+  // カレンダー関連
+  getCalendarData(year: number, month: number): Promise<CalendarDay[]>;
+  
+  // 統計関連
+  getStats(): Promise<DiaryStats>;
+  calculateStreak(posts: Post[]): { current: number; longest: number };
+}
+
 // Validation result type
 export interface ValidationResult {
   isValid: boolean;
@@ -93,6 +149,12 @@ export type AppError =
   | { type: 'STORAGE_ERROR'; message: string; operation?: string }
   | { type: 'NETWORK_ERROR'; message: string }
   | { type: 'UNKNOWN_ERROR'; message: string };
+
+// 日記機能固有のエラー型
+export type DiaryError = 
+  | { type: 'DATE_RANGE_ERROR'; message: string }
+  | { type: 'CALENDAR_GENERATION_ERROR'; message: string }
+  | { type: 'STATS_CALCULATION_ERROR'; message: string };
 
 // Toast notification types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
