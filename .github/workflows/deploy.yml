@@ -47,6 +47,7 @@ jobs:
       run: |
         cd timeline-memo-app
         npm run build:github-pages
+        cd ..
         
     - name: List build output
       run: |
