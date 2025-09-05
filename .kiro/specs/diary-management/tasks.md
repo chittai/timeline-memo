@@ -1,6 +1,6 @@
 # 実装計画
 
-- [ ] 1. 型定義とインターフェースの拡張
+- [x] 1. 型定義とインターフェースの拡張
   - 日記機能用の新しい型定義を追加（DiaryEntry, CalendarDay, DiaryStats, ViewMode拡張）
   - AppStateとAppActionの拡張を実装
   - DiaryServiceインターフェースの定義
