@@ -48,6 +48,8 @@ jobs:
         cd timeline-memo-app
         npm run build:github-pages
         cd ..
+      env:
+        GITHUB_PAGES: true
         
     - name: List build output
       run: |
