@@ -6,8 +6,9 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   
   // GitHub Pages用のベースパス設定
+  // ユーザーサイト（username.github.io）の場合はルートパス
   base: process.env.NODE_ENV === 'production' && process.env.GITHUB_PAGES 
-    ? '/timeline-memo/' 
+    ? '/' 
     : '/',
   
   // バンドル最適化設定
