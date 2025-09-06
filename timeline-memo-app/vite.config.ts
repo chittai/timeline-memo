@@ -102,4 +102,11 @@ export default defineConfig(({ mode }) => ({
       },
     },
   }),
+
+  // Vitest設定
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: [],
+  },
 }))
