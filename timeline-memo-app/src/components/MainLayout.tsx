@@ -2,7 +2,13 @@ import React, { useCallback, useState, useEffect } from 'react';
 import Header from './Header';
 import PostListPanel from './PostListPanel';
 import TimelinePanel from './TimelinePanel';
+import DiaryView from './DiaryView';
+import CalendarView from './CalendarView';
+import { ViewModeSelector } from './ViewModeSelector';
 import { useAppContext } from '../context/AppContext';
+import { useDiary } from '../hooks/useDiary';
+import { useCalendar } from '../hooks/useCalendar';
+import type { ViewMode } from '../types';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -15,7 +21,16 @@ interface MainLayoutProps {
  */
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { state, dispatch } = useAppContext();
-  const { selectedPostId, highlightedPostIds } = state;
+  const { selectedPostId, highlightedPostIds, viewMode, selectedDate } = state;
+  
+  // 日記機能用のhooks
+  const { diaryEntries } = useDiary();
+  const { 
+    currentYear, 
+    currentMonth, 
+    calendarData,
+    goToMonth 
+  } = useCalendar();
   
   // 画面サイズの状態管理
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -82,6 +97,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     // 将来的に時間軸の表示範囲調整などで使用予定
     console.log('Scroll percentage:', percentage);
   }, []);
+
+  // ビューモード変更ハンドラー
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
+    dispatch({ type: 'SET_VIEW_MODE', payload: mode });
+  }, [dispatch]);
+
+  // 日付選択ハンドラー（カレンダービュー用）
+  const handleDateSelect = useCallback((date: Date) => {
+    dispatch({ type: 'SET_SELECTED_DATE', payload: date });
+  }, [dispatch]);
+
+  // 月変更ハンドラー（カレンダービュー用）
+  const handleMonthChange = useCallback((year: number, month: number) => {
+    goToMonth(year, month);
+  }, [goToMonth]);
   // レイアウトクラスの動的生成
   const getLayoutClasses = () => {
     const baseClasses = "min-h-screen bg-gray-50";
@@ -133,68 +163,117 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       
       {/* メインコンテンツエリア */}
       <main className={getContainerClasses()}>
-        {/* デスクトップ・タブレット: 左右分割レイアウト */}
-        {screenSize !== 'mobile' && (
-          <div className={`flex ${getPanelHeight()} gap-4 lg:gap-6`}>
-            {/* 左側パネル: 時間軸エリア */}
-            <div className={`flex-shrink-0 ${
-              screenSize === 'tablet' ? 'w-64' : 'w-80 lg:w-96'
-            }`}>
-              <div className={`bg-white rounded-lg shadow-sm border border-gray-200 h-full ${
-                screenSize === 'tablet' ? 'p-3' : 'p-4'
-              }`}>
-                <TimelinePanel
-                  selectedPostId={selectedPostId}
-                  highlightedPostIds={highlightedPostIds}
-                  onPostSelect={handlePostSelect}
-                  onScrollChange={handleScrollChange}
-                  onHighlightChange={handleHighlightChange}
-                />
+        {/* ビューモードセレクター */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <ViewModeSelector
+              currentMode={viewMode}
+              onModeChange={handleViewModeChange}
+            />
+          </div>
+        </div>
+
+        {/* ビューモードに応じたコンテンツ表示 */}
+        {(viewMode === 'timeline' || viewMode === 'list') && (
+          <>
+            {/* デスクトップ・タブレット: 左右分割レイアウト */}
+            {screenSize !== 'mobile' && (
+              <div className={`flex ${getPanelHeight()} gap-4 lg:gap-6`}>
+                {/* 左側パネル: 時間軸エリア（timelineモードのみ） */}
+                {viewMode === 'timeline' && (
+                  <div className={`flex-shrink-0 ${
+                    screenSize === 'tablet' ? 'w-64' : 'w-80 lg:w-96'
+                  }`}>
+                    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 h-full ${
+                      screenSize === 'tablet' ? 'p-3' : 'p-4'
+                    }`}>
+                      <TimelinePanel
+                        selectedPostId={selectedPostId}
+                        highlightedPostIds={highlightedPostIds}
+                        onPostSelect={handlePostSelect}
+                        onScrollChange={handleScrollChange}
+                        onHighlightChange={handleHighlightChange}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* 右側パネル: 投稿リストエリア */}
+                <div className="flex-1 min-w-0">
+                  <div className={`bg-white rounded-lg shadow-sm border border-gray-200 h-full ${
+                    screenSize === 'tablet' ? 'p-3' : 'p-4'
+                  }`}>
+                    <PostListPanel
+                      selectedPostId={selectedPostId}
+                      onPostSelect={handlePostSelect}
+                      onScrollChange={handleScrollChange}
+                      onHighlightChange={handleHighlightChange}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
             
-            {/* 右側パネル: 投稿リストエリア */}
-            <div className="flex-1 min-w-0">
-              <div className={`bg-white rounded-lg shadow-sm border border-gray-200 h-full ${
-                screenSize === 'tablet' ? 'p-3' : 'p-4'
-              }`}>
-                <PostListPanel
-                  selectedPostId={selectedPostId}
-                  onPostSelect={handlePostSelect}
-                  onScrollChange={handleScrollChange}
-                  onHighlightChange={handleHighlightChange}
-                />
+            {/* モバイル: 上下分割レイアウト */}
+            {screenSize === 'mobile' && (
+              <div className="space-y-3">
+                {/* 上部: 時間軸エリア（timelineモードのみ） */}
+                {viewMode === 'timeline' && (
+                  <div className={getTimelinePanelHeight()}>
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-3">
+                      <TimelinePanel
+                        selectedPostId={selectedPostId}
+                        highlightedPostIds={highlightedPostIds}
+                        onPostSelect={handlePostSelect}
+                        onScrollChange={handleScrollChange}
+                        onHighlightChange={handleHighlightChange}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* 下部: 投稿リストエリア */}
+                <div className={`${getPanelHeight()}`}>
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-3">
+                    <PostListPanel
+                      selectedPostId={selectedPostId}
+                      onPostSelect={handlePostSelect}
+                      onScrollChange={handleScrollChange}
+                      onHighlightChange={handleHighlightChange}
+                    />
+                  </div>
+                </div>
               </div>
+            )}
+          </>
+        )}
+
+        {/* 日記ビュー */}
+        {viewMode === 'diary' && (
+          <div className={`${getPanelHeight()}`}>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-4">
+              <DiaryView
+                entries={diaryEntries}
+                selectedDate={selectedDate}
+                onDateSelect={handleDateSelect}
+                onPostSelect={handlePostSelect}
+              />
             </div>
           </div>
         )}
-        
-        {/* モバイル: 上下分割レイアウト */}
-        {screenSize === 'mobile' && (
-          <div className="space-y-3">
-            {/* 上部: 時間軸エリア */}
-            <div className={getTimelinePanelHeight()}>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-3">
-                <TimelinePanel
-                  selectedPostId={selectedPostId}
-                  highlightedPostIds={highlightedPostIds}
-                  onPostSelect={handlePostSelect}
-                  onScrollChange={handleScrollChange}
-                  onHighlightChange={handleHighlightChange}
-                />
-              </div>
-            </div>
-            
-            {/* 下部: 投稿リストエリア */}
-            <div className={`${getPanelHeight()}`}>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-3">
-                <PostListPanel
-                  selectedPostId={selectedPostId}
-                  onPostSelect={handlePostSelect}
-                  onScrollChange={handleScrollChange}
-                  onHighlightChange={handleHighlightChange}
-                />
-              </div>
+
+        {/* カレンダービュー */}
+        {viewMode === 'calendar' && (
+          <div className={`${getPanelHeight()}`}>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-4">
+              <CalendarView
+                year={currentYear}
+                month={currentMonth}
+                calendarData={calendarData}
+                selectedDate={selectedDate || undefined}
+                onDateClick={handleDateSelect}
+                onMonthChange={handleMonthChange}
+              />
             </div>
           </div>
         )}

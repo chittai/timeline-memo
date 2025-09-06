@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { CalendarDay, Post } from '../types';
 import { CalendarService } from '../services/CalendarService';
-import { DataService } from '../services/DataService';
 import { useAppReducer } from './useAppReducer';
 
 /**
@@ -52,6 +51,8 @@ export function useCalendar(): UseCalendarReturn {
   
   // カレンダーサービスのインスタンス化（メモ化）
   const calendarService = useMemo(() => {
+    // DataServiceを動的にインポート
+    const { DataService } = require('../services/DataService');
     const dataService = new DataService();
     return new CalendarService(dataService);
   }, []);

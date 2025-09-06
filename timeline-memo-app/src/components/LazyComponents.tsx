@@ -16,3 +16,6 @@ export const LazyToast = lazy(() => import('./Toast').then(module => ({ default:
 
 // トーストコンテナ（エラー時のみ使用のため遅延読み込み）
 export const LazyToastContainer = lazy(() => import('./ToastContainer').then(module => ({ default: module.ToastContainer })));
+
+// 日記ビュー（日記モード時のみ使用のため遅延読み込み）
+export const LazyDiaryView = lazy(() => import('./DiaryView'));

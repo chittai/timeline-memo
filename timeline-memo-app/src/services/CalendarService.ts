@@ -1,4 +1,4 @@
-import type { Post, CalendarDay, DateRange } from '../types';
+import type { Post, CalendarDay } from '../types';
 import type { DataService } from './DataService';
 
 /**

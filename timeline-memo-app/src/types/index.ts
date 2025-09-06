@@ -59,6 +59,15 @@ export interface DiaryStats {
   averagePostsPerDay: number;
 }
 
+export interface MonthlySummary {
+  year: number;
+  month: number;
+  postCount: number;
+  activeDays: number;
+  averagePostsPerDay: number;
+  longestStreakInMonth: number;
+}
+
 export interface DateRange {
   start: Date;
   end: Date;

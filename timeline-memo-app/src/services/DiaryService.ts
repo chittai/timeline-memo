@@ -1,4 +1,4 @@
-import type { Post, DiaryEntry, DiaryStats, DateRange, DiaryService as IDiaryService } from '../types';
+import type { Post, DiaryEntry, DiaryStats, DiaryService as IDiaryService } from '../types';
 import type { DataService } from './DataService';
 
 /**
@@ -54,9 +54,7 @@ export class DiaryService implements IDiaryService {
    * @param date2 比較する日付2
    * @returns 同じ日の場合true
    */
-  private isSameDay(date1: Date, date2: Date): boolean {
-    return this.formatDateKey(date1) === this.formatDateKey(date2);
-  }
+
 
   /**
    * 指定した日付範囲の日記エントリーを取得

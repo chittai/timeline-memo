@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { StatsService, DiaryStats, MonthlySummary } from '../services/StatsService';
-import { Post } from '../types';
+import { StatsService } from '../services/StatsService';
+import type { Post, DiaryStats, MonthlySummary } from '../types';
 
 /**
  * useStatsフックの戻り値の型定義

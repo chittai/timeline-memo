@@ -1,4 +1,4 @@
-import { Post } from '../types';
+import type { Post } from '../types';
 
 /**
  * 日記統計情報の型定義
@@ -283,8 +283,6 @@ export class StatsService {
    * @returns 促進メッセージ（必要な場合のみ）
    */
   static generateMotivationMessage(stats: DiaryStats): string | null {
-    const today = new Date();
-    const todayStr = this.formatDateToString(today);
     
     // 現在の継続日数が0で、かつ総投稿数が0でない場合は投稿を促す
     if (stats.currentStreak === 0 && stats.totalPosts > 0) {
