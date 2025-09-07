@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { CalendarDay } from '../types';
 
 interface CalendarViewProps {
@@ -13,6 +13,7 @@ interface CalendarViewProps {
 /**
  * カレンダー形式で投稿履歴を表示するコンポーネント
  * 投稿がある日をハイライト表示し、日付クリックで投稿表示機能を提供
+ * レスポンシブデザイン対応
  */
 const CalendarView: React.FC<CalendarViewProps> = ({
   year,
@@ -22,6 +23,44 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   onDateClick,
   onMonthChange,
 }) => {
+  // デバイス情報の状態管理
+  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
+
+  // 画面サイズとデバイス情報の検出
+  useEffect(() => {
+    const updateScreenInfo = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // 画面サイズの判定
+      if (width < 768) {
+        setScreenSize('mobile');
+      } else if (width < 1024) {
+        setScreenSize('tablet');
+      } else {
+        setScreenSize('desktop');
+      }
+      
+      // 向きの判定
+      setOrientation(width > height ? 'landscape' : 'portrait');
+      
+      // タッチデバイスの判定
+      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+
+    updateScreenInfo();
+    window.addEventListener('resize', updateScreenInfo);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateScreenInfo, 100);
+    });
+
+    return () => {
+      window.removeEventListener('resize', updateScreenInfo);
+      window.removeEventListener('orientationchange', updateScreenInfo);
+    };
+  }, []);
   // 月の名前を取得
   const getMonthName = (month: number): string => {
     const monthNames = [
@@ -80,55 +119,126 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const calendarGrid = generateCalendarGrid();
 
+  // レスポンシブ対応のスタイル計算
+  const getResponsiveStyles = () => {
+    return {
+      container: screenSize === 'mobile' 
+        ? 'calendar-view bg-white rounded-lg shadow-sm border border-gray-200 p-3' 
+        : screenSize === 'tablet'
+        ? 'calendar-view bg-white rounded-lg shadow-sm border border-gray-200 p-4'
+        : 'calendar-view bg-white rounded-lg shadow-sm border border-gray-200 p-6',
+      
+      header: screenSize === 'mobile' 
+        ? 'calendar-header flex items-center justify-between mb-4' 
+        : 'calendar-header flex items-center justify-between mb-6',
+      
+      headerButton: screenSize === 'mobile'
+        ? `p-3 rounded-lg hover:bg-gray-100 transition-colors ${isTouchDevice ? 'min-h-11 min-w-11' : ''}`
+        : 'p-2 rounded-lg hover:bg-gray-100 transition-colors',
+      
+      headerIcon: screenSize === 'mobile' ? 'w-6 h-6' : 'w-5 h-5',
+      
+      headerTitle: screenSize === 'mobile' 
+        ? 'text-lg font-semibold text-gray-900' 
+        : screenSize === 'tablet'
+        ? 'text-xl font-semibold text-gray-900'
+        : 'text-xl font-semibold text-gray-900',
+      
+      weekdayHeader: screenSize === 'mobile'
+        ? 'calendar-weekdays grid grid-cols-7 gap-1 mb-2'
+        : 'calendar-weekdays grid grid-cols-7 gap-1 mb-2',
+      
+      weekdayCell: screenSize === 'mobile'
+        ? 'text-center text-xs font-medium py-1'
+        : 'text-center text-sm font-medium py-2',
+      
+      calendarGrid: screenSize === 'mobile'
+        ? 'calendar-grid grid grid-cols-7 gap-1'
+        : 'calendar-grid grid grid-cols-7 gap-1',
+      
+      dayCell: screenSize === 'mobile'
+        ? `calendar-day ${orientation === 'portrait' ? 'h-10' : 'h-8'} rounded-lg border transition-all duration-200 relative ${isTouchDevice ? 'min-h-11' : ''}`
+        : screenSize === 'tablet'
+        ? 'calendar-day h-12 rounded-lg border transition-all duration-200 relative'
+        : 'calendar-day h-12 rounded-lg border transition-all duration-200 relative',
+      
+      dayText: screenSize === 'mobile' 
+        ? 'text-xs font-medium' 
+        : 'text-sm font-medium',
+      
+      legend: screenSize === 'mobile'
+        ? 'calendar-legend mt-4 flex flex-wrap gap-2 text-xs text-gray-600'
+        : 'calendar-legend mt-6 flex flex-wrap gap-4 text-sm text-gray-600',
+      
+      legendIcon: screenSize === 'mobile' ? 'w-2 h-2' : 'w-3 h-3',
+      
+      postCountBadge: screenSize === 'mobile'
+        ? 'absolute -top-1 -right-1 text-xs font-bold min-w-3 h-3 rounded-full flex items-center justify-center'
+        : 'absolute -top-1 -right-1 text-xs font-bold min-w-4 h-4 rounded-full flex items-center justify-center',
+      
+      postIndicator: screenSize === 'mobile'
+        ? 'absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full'
+        : 'absolute bottom-1 right-1 w-2 h-2 rounded-full'
+    };
+  };
+
+  const styles = getResponsiveStyles();
+
   return (
-    <div className="calendar-view bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className={styles.container}>
       {/* カレンダーヘッダー */}
-      <div className="calendar-header flex items-center justify-between mb-6">
+      <div className={styles.header}>
         <button
           onClick={handlePreviousMonth}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className={styles.headerButton}
           aria-label="前月"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={styles.headerIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         
-        <h2 className="text-xl font-semibold text-gray-900">
-          {year}年 {getMonthName(month)}
+        <h2 className={styles.headerTitle}>
+          {screenSize === 'mobile' && orientation === 'landscape' 
+            ? `${year}/${month}` 
+            : `${year}年 ${getMonthName(month)}`
+          }
         </h2>
         
         <button
           onClick={handleNextMonth}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className={styles.headerButton}
           aria-label="次月"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={styles.headerIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
 
       {/* 曜日ヘッダー */}
-      <div className="calendar-weekdays grid grid-cols-7 gap-1 mb-2">
+      <div className={styles.weekdayHeader}>
         {getDayHeaders().map((day, index) => (
           <div
             key={day}
-            className={`text-center text-sm font-medium py-2 ${
+            className={`${styles.weekdayCell} ${
               index === 0 ? 'text-red-600' : index === 6 ? 'text-blue-600' : 'text-gray-700'
             }`}
           >
-            {day}
+            {screenSize === 'mobile' && orientation === 'landscape' 
+              ? day.charAt(0) // 横向きモバイルでは1文字表示
+              : day
+            }
           </div>
         ))}
       </div>
 
       {/* カレンダーグリッド */}
-      <div className="calendar-grid grid grid-cols-7 gap-1">
+      <div className={styles.calendarGrid}>
         {calendarGrid.map((dayData, index) => {
           if (!dayData) {
             // 空のセル
-            return <div key={`empty-${index}`} className="calendar-day-empty h-12" />;
+            return <div key={`empty-${index}`} className={`calendar-day-empty ${styles.dayCell.split(' ')[1]}`} />;
           }
 
           const isSelected = isDateSelected(dayData.date);
@@ -141,7 +251,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               key={dayData.date.toISOString()}
               onClick={() => onDateClick(dayData.date)}
               className={`
-                calendar-day h-12 rounded-lg border transition-all duration-200 relative
+                ${styles.dayCell}
                 ${isSelected 
                   ? 'bg-blue-500 text-white border-blue-500 shadow-md' 
                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -162,23 +272,23 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       ? 'text-gray-700' 
                       : ''
                 }
+                ${isTouchDevice ? 'touch-manipulation' : ''}
               `}
               aria-label={`${dayData.date.getDate()}日${dayData.hasPost ? ` (${dayData.postCount}件の投稿)` : ''}`}
             >
-              <span className="text-sm font-medium">
+              <span className={styles.dayText}>
                 {dayData.date.getDate()}
               </span>
               
               {/* 投稿数インジケーター */}
               {dayData.hasPost && (
                 <div className={`
-                  absolute bottom-1 right-1 w-2 h-2 rounded-full
+                  ${styles.postIndicator}
                   ${isSelected ? 'bg-white' : 'bg-green-500'}
                 `}>
                   {dayData.postCount > 1 && (
                     <span className={`
-                      absolute -top-1 -right-1 text-xs font-bold min-w-4 h-4 
-                      rounded-full flex items-center justify-center
+                      ${styles.postCountBadge}
                       ${isSelected 
                         ? 'bg-white text-blue-500' 
                         : 'bg-green-600 text-white'
@@ -195,20 +305,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* カレンダー凡例 */}
-      <div className="calendar-legend mt-6 flex flex-wrap gap-4 text-sm text-gray-600">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-blue-50 border border-blue-400"></div>
-          <span>今日</span>
+      {!(screenSize === 'mobile' && orientation === 'landscape') && (
+        <div className={styles.legend}>
+          <div className="flex items-center gap-2">
+            <div className={`${styles.legendIcon} rounded bg-blue-50 border border-blue-400`}></div>
+            <span>今日</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`${styles.legendIcon} rounded bg-green-50 border border-green-200`}></div>
+            <span>投稿あり</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`${styles.legendIcon} rounded bg-blue-500`}></div>
+            <span>選択中</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-green-50 border border-green-200"></div>
-          <span>投稿あり</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-blue-500"></div>
-          <span>選択中</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

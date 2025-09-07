@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { DiaryStats } from '../types';
 
 interface DiaryStatsPanelProps {
@@ -9,11 +9,50 @@ interface DiaryStatsPanelProps {
 /**
  * 日記統計パネルコンポーネント
  * 投稿統計、継続日数、月間サマリーを表示する
+ * レスポンシブデザイン対応
  */
 export const DiaryStatsPanel: React.FC<DiaryStatsPanelProps> = ({
   stats,
   isLoading
 }) => {
+  // デバイス情報の状態管理
+  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
+
+  // 画面サイズとデバイス情報の検出
+  useEffect(() => {
+    const updateScreenInfo = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // 画面サイズの判定
+      if (width < 768) {
+        setScreenSize('mobile');
+      } else if (width < 1024) {
+        setScreenSize('tablet');
+      } else {
+        setScreenSize('desktop');
+      }
+      
+      // 向きの判定
+      setOrientation(width > height ? 'landscape' : 'portrait');
+      
+      // タッチデバイスの判定
+      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+
+    updateScreenInfo();
+    window.addEventListener('resize', updateScreenInfo);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateScreenInfo, 100);
+    });
+
+    return () => {
+      window.removeEventListener('resize', updateScreenInfo);
+      window.removeEventListener('orientationchange', updateScreenInfo);
+    };
+  }, []);
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm border p-6">

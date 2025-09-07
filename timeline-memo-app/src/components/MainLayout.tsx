@@ -6,9 +6,11 @@ import DiaryView from './DiaryView';
 import CalendarView from './CalendarView';
 import { ViewModeSelector } from './ViewModeSelector';
 import MotivationPanel from './MotivationPanel';
+import { DiaryStatsPanel } from './DiaryStatsPanel';
 import { useAppContext } from '../context/AppContext';
 import { useDiary } from '../hooks/useDiary';
 import { useCalendar } from '../hooks/useCalendar';
+import { useStats } from '../hooks/useStats';
 import type { ViewMode, DateRange } from '../types';
 
 interface MainLayoutProps {
@@ -35,6 +37,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     calendarData,
     goToMonth 
   } = useCalendar();
+  const { 
+    stats, 
+    isLoading: statsLoading 
+  } = useStats();
   
   // 日付フィルタリング用の状態
   const [currentDateRange, setCurrentDateRange] = useState<DateRange | null>(null);
@@ -268,20 +274,65 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         {/* 日記ビュー */}
         {viewMode === 'diary' && (
-          <div className={`${getPanelHeight()}`}>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-4">
-              <DiaryView
-                entries={diaryEntries}
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
-                onPostSelect={handlePostSelect}
-                selectedPostId={selectedPostId}
-                showDateFilter={true}
-                onDateRangeChange={handleDateRangeChange}
-                currentDateRange={currentDateRange}
-              />
-            </div>
-          </div>
+          <>
+            {/* デスクトップ・タブレット: 左右分割レイアウト（統計パネル付き） */}
+            {screenSize !== 'mobile' && (
+              <div className={`flex ${getPanelHeight()} gap-4 lg:gap-6`}>
+                {/* 左側: 日記ビュー */}
+                <div className="flex-1 min-w-0">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-4">
+                    <DiaryView
+                      entries={diaryEntries}
+                      selectedDate={selectedDate}
+                      onDateSelect={handleDateSelect}
+                      onPostSelect={handlePostSelect}
+                      selectedPostId={selectedPostId}
+                      showDateFilter={true}
+                      onDateRangeChange={handleDateRangeChange}
+                      currentDateRange={currentDateRange}
+                    />
+                  </div>
+                </div>
+                
+                {/* 右側: 統計パネル */}
+                <div className={`flex-shrink-0 ${screenSize === 'tablet' ? 'w-64' : 'w-80'}`}>
+                  <DiaryStatsPanel
+                    stats={stats}
+                    isLoading={statsLoading}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* モバイル: 上下分割レイアウト */}
+            {screenSize === 'mobile' && (
+              <div className="space-y-3">
+                {/* 上部: 統計パネル（コンパクト表示） */}
+                <div className="h-48">
+                  <DiaryStatsPanel
+                    stats={stats}
+                    isLoading={statsLoading}
+                  />
+                </div>
+                
+                {/* 下部: 日記ビュー */}
+                <div className={`${getPanelHeight()}`}>
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full p-3">
+                    <DiaryView
+                      entries={diaryEntries}
+                      selectedDate={selectedDate}
+                      onDateSelect={handleDateSelect}
+                      onPostSelect={handlePostSelect}
+                      selectedPostId={selectedPostId}
+                      showDateFilter={true}
+                      onDateRangeChange={handleDateRangeChange}
+                      currentDateRange={currentDateRange}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* カレンダービュー */}

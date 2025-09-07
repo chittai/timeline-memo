@@ -70,4 +70,69 @@
   .post-list-panel {
     padding: 0.5rem;
   }
+  
+  .calendar-view {
+    padding: 0.5rem;
+  }
+  
+  .diary-stats-panel {
+    padding: 0.5rem;
+  }
+}
+
+/* レスポンシブ対応のユーティリティクラス */
+@media (max-width: 767px) {
+  /* モバイル向けの調整 */
+  .mobile-optimized {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-compact {
+    padding: 0.5rem;
+    margin: 0.25rem;
+  }
+  
+  /* カレンダーグリッドの調整 */
+  .calendar-grid button {
+    font-size: 0.75rem;
+  }
+  
+  /* 統計パネルの調整 */
+  .stats-grid {
+    gap: 0.5rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* タブレット向けの調整 */
+  .tablet-optimized {
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* デスクトップ向けの調整 */
+  .desktop-optimized {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* 高解像度ディスプレイ対応 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .high-dpi-optimized {
+    /* 高解像度ディスプレイでのフォント調整 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ダークモード対応の基本設定 */
+@media (prefers-color-scheme: dark) {
+  .auto-dark-mode {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
 }
