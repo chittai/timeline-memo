@@ -97,10 +97,25 @@ export function useDiary() {
     dispatch({ type: 'SET_SELECTED_DATE', payload: date });
   }, [dispatch]);
 
+  // フィルターのクリア（全期間の日記エントリーを再読み込み）
+  const clearFilter = useCallback(async () => {
+    selectDate(null);
+    await loadDiaryEntries();
+  }, [selectDate, loadDiaryEntries]);
+
   // 日付範囲でのフィルタリング
   const filterByDateRange = useCallback(async (start: Date, end: Date) => {
     await loadDiaryEntriesByDateRange({ start, end });
   }, [loadDiaryEntriesByDateRange]);
+
+  // 日付範囲フィルターの適用
+  const applyDateRangeFilter = useCallback(async (dateRange: DateRange | null) => {
+    if (dateRange) {
+      await loadDiaryEntriesByDateRange(dateRange);
+    } else {
+      await clearFilter();
+    }
+  }, [loadDiaryEntriesByDateRange, clearFilter]);
 
   // 特定の日付でのフィルタリング
   const filterByDate = useCallback(async (date: Date) => {
@@ -113,12 +128,6 @@ export function useDiary() {
     await filterByDateRange(startOfDay, endOfDay);
     selectDate(date);
   }, [filterByDateRange, selectDate]);
-
-  // フィルターのクリア（全期間の日記エントリーを再読み込み）
-  const clearFilter = useCallback(async () => {
-    selectDate(null);
-    await loadDiaryEntries();
-  }, [selectDate, loadDiaryEntries]);
 
   // 今日の日記エントリーを取得
   const getTodayEntry = useCallback(async (): Promise<DiaryEntry | null> => {
@@ -193,6 +202,7 @@ export function useDiary() {
     filterByDateRange,
     filterByDate,
     clearFilter,
+    applyDateRangeFilter,
     getTodayEntry,
     getThisWeekEntries,
     getThisMonthEntries

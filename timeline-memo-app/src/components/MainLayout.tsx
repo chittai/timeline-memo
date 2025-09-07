@@ -8,7 +8,7 @@ import { ViewModeSelector } from './ViewModeSelector';
 import { useAppContext } from '../context/AppContext';
 import { useDiary } from '../hooks/useDiary';
 import { useCalendar } from '../hooks/useCalendar';
-import type { ViewMode } from '../types';
+import type { ViewMode, DateRange } from '../types';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -24,13 +24,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { selectedPostId, highlightedPostIds, viewMode, selectedDate } = state;
   
   // 日記機能用のhooks
-  const { diaryEntries } = useDiary();
+  const { 
+    diaryEntries, 
+    applyDateRangeFilter 
+  } = useDiary();
   const { 
     currentYear, 
     currentMonth, 
     calendarData,
     goToMonth 
   } = useCalendar();
+  
+  // 日付フィルタリング用の状態
+  const [currentDateRange, setCurrentDateRange] = useState<DateRange | null>(null);
   
   // 画面サイズの状態管理
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -112,6 +118,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const handleMonthChange = useCallback((year: number, month: number) => {
     goToMonth(year, month);
   }, [goToMonth]);
+
+  // 日付範囲フィルター変更ハンドラー
+  const handleDateRangeChange = useCallback(async (range: DateRange | null) => {
+    setCurrentDateRange(range);
+    await applyDateRangeFilter(range);
+  }, [applyDateRangeFilter]);
   // レイアウトクラスの動的生成
   const getLayoutClasses = () => {
     const baseClasses = "min-h-screen bg-gray-50";
@@ -257,6 +269,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 selectedDate={selectedDate}
                 onDateSelect={handleDateSelect}
                 onPostSelect={handlePostSelect}
+                selectedPostId={selectedPostId}
+                showDateFilter={true}
+                onDateRangeChange={handleDateRangeChange}
+                currentDateRange={currentDateRange}
               />
             </div>
           </div>

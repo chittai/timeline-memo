@@ -2,11 +2,12 @@ import React, { memo, useMemo, useCallback, useState, useEffect } from 'react';
 import PostItem from './PostItem';
 import { PostForm } from './PostForm';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
+import { DateRangeFilter } from './DateRangeFilter';
 import { usePosts } from '../hooks/usePosts';
 import { useAppContext } from '../context/AppContext';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useRenderTime } from '../hooks/usePerformanceMonitor';
-import type { Post, DiaryEntry } from '../types';
+import type { Post, DiaryEntry, DateRange } from '../types';
 
 interface DiaryViewProps {
   /** 日記エントリーのリスト */
@@ -19,6 +20,12 @@ interface DiaryViewProps {
   onPostSelect?: (postId: string | null) => void;
   /** 選択された投稿ID */
   selectedPostId?: string | null;
+  /** 日付範囲フィルターの表示フラグ */
+  showDateFilter?: boolean;
+  /** 日付範囲変更時のコールバック */
+  onDateRangeChange?: (range: DateRange | null) => void;
+  /** 現在の日付範囲フィルター */
+  currentDateRange?: DateRange | null;
 }
 
 /**
@@ -31,7 +38,10 @@ const DiaryView: React.FC<DiaryViewProps> = ({
   selectedDate,
   onDateSelect,
   onPostSelect,
-  selectedPostId
+  selectedPostId,
+  showDateFilter = true,
+  onDateRangeChange,
+  currentDateRange
 }) => {
   // パフォーマンス監視
   useRenderTime('DiaryView');
@@ -168,6 +178,20 @@ const DiaryView: React.FC<DiaryViewProps> = ({
     }
   }, [isDeleting]);
 
+  // 日付範囲フィルター変更ハンドラー
+  const handleDateRangeChange = useCallback((range: DateRange | null) => {
+    if (onDateRangeChange) {
+      onDateRangeChange(range);
+    }
+  }, [onDateRangeChange]);
+
+  // 日付範囲フィルタークリアハンドラー
+  const handleDateRangeClear = useCallback(() => {
+    if (onDateRangeChange) {
+      onDateRangeChange(null);
+    }
+  }, [onDateRangeChange]);
+
   // レスポンシブ対応のスタイル計算
   const getTextSizes = () => {
     return {
@@ -242,6 +266,17 @@ const DiaryView: React.FC<DiaryViewProps> = ({
         </div>
       )}
 
+      {/* 日付範囲フィルター */}
+      {showDateFilter && (
+        <div className="flex-shrink-0 mb-4">
+          <DateRangeFilter
+            onDateRangeChange={handleDateRangeChange}
+            onClear={handleDateRangeClear}
+            currentRange={currentDateRange}
+          />
+        </div>
+      )}
+
       {/* ヘッダー */}
       <div className={`flex-shrink-0 ${isMobile ? 'pb-2' : 'pb-3'} border-b border-gray-200`}>
         <div className="flex justify-between items-center">
@@ -252,6 +287,20 @@ const DiaryView: React.FC<DiaryViewProps> = ({
             {isMobile ? `${entries.length}日` : `${entries.length}日間の記録`}
           </span>
         </div>
+        
+        {/* フィルター適用時の結果表示 */}
+        {currentDateRange && entries.length === 0 && (
+          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-4 h-4 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">
+                指定した期間に該当する投稿がありません
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 日記エントリーリスト */}
