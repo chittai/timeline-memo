@@ -23,9 +23,6 @@ export const DiaryStatsPanel: React.FC<DiaryStatsPanelProps> = ({
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
-  
-  // 未使用変数の警告を回避するため、実際に使用
-  console.debug('Device info:', { screenSize, isTouchDevice, orientation });
 
   // 画面サイズとデバイス情報の検出
   useEffect(() => {
@@ -99,10 +96,10 @@ export const DiaryStatsPanel: React.FC<DiaryStatsPanelProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
+    <div className={`bg-white rounded-lg shadow-sm border p-6 ${screenSize === 'mobile' ? 'text-sm' : ''}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
-          📊 統計情報
+        <h3 className={`font-semibold text-gray-900 ${screenSize === 'mobile' ? 'text-base' : 'text-lg'}`}>
+          📊 統計情報 {isTouchDevice && orientation === 'portrait' ? '📱' : ''}
         </h3>
         {hasPartialData && (
           <div className="flex items-center text-amber-600 text-sm">

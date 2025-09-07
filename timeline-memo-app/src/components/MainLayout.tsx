@@ -296,10 +296,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 
                 {/* 右側: 統計パネル */}
                 <div className={`flex-shrink-0 ${screenSize === 'tablet' ? 'w-64' : 'w-80'}`}>
-                  {stats && <DiaryStatsPanel
-                    stats={stats}
-                    isLoading={statsLoading}
-                  />}
+                  {stats ? (
+                    <DiaryStatsPanel
+                      stats={stats}
+                      isLoading={statsLoading}
+                    />
+                  ) : (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <div className="animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -309,10 +318,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <div className="space-y-3">
                 {/* 上部: 統計パネル（コンパクト表示） */}
                 <div className="h-48">
-                  {stats && <DiaryStatsPanel
-                    stats={stats}
-                    isLoading={statsLoading}
-                  />}
+                  {stats ? (
+                    <DiaryStatsPanel
+                      stats={stats}
+                      isLoading={statsLoading}
+                    />
+                  ) : (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-full">
+                      <div className="animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* 下部: 日記ビュー */}
