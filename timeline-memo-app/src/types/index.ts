@@ -68,6 +68,26 @@ export interface MonthlySummary {
   longestStreakInMonth: number;
 }
 
+// 継続促進機能用の型定義
+export interface MotivationMessage {
+  id: string;
+  type: 'encouragement' | 'achievement' | 'reminder';
+  title: string;
+  message: string;
+  daysSinceLastPost?: number;
+  streakCount?: number;
+  isVisible: boolean;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+
+export interface StreakAchievement {
+  streakLength: number;
+  achievedAt: Date;
+  isNewRecord: boolean;
+  previousRecord?: number;
+}
+
 export interface DateRange {
   start: Date;
   end: Date;
@@ -90,6 +110,10 @@ export interface AppState {
   diaryEntries: DiaryEntry[];
   calendarData: CalendarDay[];
   diaryStats: DiaryStats | null;
+  // 継続促進機能用の新規フィールド
+  motivationMessages: MotivationMessage[];
+  lastPostDate: Date | null;
+  daysSinceLastPost: number;
 }
 
 // State management actions
@@ -113,7 +137,13 @@ export type AppAction =
   | { type: 'SET_SELECTED_DATE'; payload: Date | null }
   | { type: 'LOAD_DIARY_ENTRIES'; payload: DiaryEntry[] }
   | { type: 'LOAD_CALENDAR_DATA'; payload: CalendarDay[] }
-  | { type: 'LOAD_DIARY_STATS'; payload: DiaryStats };
+  | { type: 'LOAD_DIARY_STATS'; payload: DiaryStats }
+  // 継続促進機能用の新規アクション
+  | { type: 'ADD_MOTIVATION_MESSAGE'; payload: MotivationMessage }
+  | { type: 'REMOVE_MOTIVATION_MESSAGE'; payload: string }
+  | { type: 'CLEAR_MOTIVATION_MESSAGES' }
+  | { type: 'UPDATE_LAST_POST_DATE'; payload: Date | null }
+  | { type: 'UPDATE_DAYS_SINCE_LAST_POST'; payload: number };
 
 // Data service interface for abstraction
 export interface DataService {

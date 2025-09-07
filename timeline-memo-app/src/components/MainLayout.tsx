@@ -5,6 +5,7 @@ import TimelinePanel from './TimelinePanel';
 import DiaryView from './DiaryView';
 import CalendarView from './CalendarView';
 import { ViewModeSelector } from './ViewModeSelector';
+import MotivationPanel from './MotivationPanel';
 import { useAppContext } from '../context/AppContext';
 import { useDiary } from '../hooks/useDiary';
 import { useCalendar } from '../hooks/useCalendar';
@@ -183,6 +184,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               onModeChange={handleViewModeChange}
             />
           </div>
+        </div>
+
+        {/* 継続促進パネル */}
+        <div className="mb-6">
+          <MotivationPanel />
         </div>
 
         {/* ビューモードに応じたコンテンツ表示 */}

@@ -18,7 +18,12 @@ const initialState: AppState = {
   selectedDate: null,        // 選択された日付（カレンダービューで使用）
   diaryEntries: [],          // 日付ごとにグループ化された投稿エントリー
   calendarData: [],          // カレンダー表示用のデータ
-  diaryStats: null           // 投稿統計情報
+  diaryStats: null,          // 投稿統計情報
+  
+  // 継続促進機能用の新規フィールド
+  motivationMessages: [],    // 促進メッセージのリスト
+  lastPostDate: null,        // 最後の投稿日
+  daysSinceLastPost: 0       // 最後の投稿からの経過日数
 };
 
 // Reducerの実装
@@ -40,7 +45,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
         // 投稿が追加されたら日記関連のデータをクリアして再計算を促す
         diaryEntries: [],
         calendarData: [],
-        diaryStats: null
+        diaryStats: null,
+        // 継続促進機能の状態も更新
+        lastPostDate: action.payload.createdAt,
+        daysSinceLastPost: 0 // 新しい投稿があったので0にリセット
       };
 
     case 'UPDATE_POST':
@@ -66,6 +74,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         diaryEntries: [],
         calendarData: [],
         diaryStats: null
+        // 継続促進機能の状態は削除後に再計算されるため、ここでは更新しない
       };
 
     case 'SELECT_POST':
@@ -173,6 +182,43 @@ function appReducer(state: AppState, action: AppAction): AppState {
         diaryStats: action.payload,
         loading: { isLoading: false },
         error: null
+      };
+
+    // 継続促進機能用の新規アクションハンドラー
+    
+    // 促進メッセージの追加
+    case 'ADD_MOTIVATION_MESSAGE':
+      return {
+        ...state,
+        motivationMessages: [...state.motivationMessages, action.payload]
+      };
+
+    // 促進メッセージの削除
+    case 'REMOVE_MOTIVATION_MESSAGE':
+      return {
+        ...state,
+        motivationMessages: state.motivationMessages.filter(message => message.id !== action.payload)
+      };
+
+    // 全ての促進メッセージをクリア
+    case 'CLEAR_MOTIVATION_MESSAGES':
+      return {
+        ...state,
+        motivationMessages: []
+      };
+
+    // 最後の投稿日の更新
+    case 'UPDATE_LAST_POST_DATE':
+      return {
+        ...state,
+        lastPostDate: action.payload
+      };
+
+    // 最後の投稿からの経過日数の更新
+    case 'UPDATE_DAYS_SINCE_LAST_POST':
+      return {
+        ...state,
+        daysSinceLastPost: action.payload
       };
 
     default:

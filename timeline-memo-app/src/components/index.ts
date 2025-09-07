@@ -19,6 +19,7 @@ export { default as CalendarView } from './CalendarView';
 export { DiaryStatsPanel } from './DiaryStatsPanel';
 export { ViewModeSelector } from './ViewModeSelector';
 export { DateRangeFilter } from './DateRangeFilter';
+export { default as MotivationPanel } from './MotivationPanel';
 
 // 遅延読み込みコンポーネント
 export * from './LazyComponents';

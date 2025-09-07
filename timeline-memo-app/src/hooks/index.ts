@@ -11,3 +11,7 @@ export { useTimelineSync } from './useTimelineSync';
 // 日記機能用のフック
 export { useDiary } from './useDiary';
 export { useCalendar } from './useCalendar';
+export { useStats } from './useStats';
+
+// 継続促進機能用のフック
+export { useMotivation } from './useMotivation';

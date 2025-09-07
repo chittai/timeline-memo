@@ -3,6 +3,7 @@ export { IndexedDBService } from './IndexedDBService';
 export { DiaryService } from './DiaryService';
 export { CalendarService } from './CalendarService';
 export { StatsService } from './StatsService';
+export { MotivationService } from './MotivationService';
 export type { DataService } from './DataService';
 
 // 型定義のエクスポート
