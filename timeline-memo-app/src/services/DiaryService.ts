@@ -9,7 +9,7 @@ import {
   createDiaryError,
   ERROR_MESSAGES
 } from '../utils/diaryErrorUtils';
-import type { ErrorHandlerResult } from '../types/errors';
+// import type { ErrorHandlerResult } from '../types/errors';
 
 /**
  * 日記機能を提供するサービスクラス

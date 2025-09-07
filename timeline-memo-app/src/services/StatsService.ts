@@ -201,7 +201,7 @@ export class StatsService {
             if (isNaN(prevDate.getTime()) || isNaN(currentDate.getTime())) {
               const errorInfo = createDiaryError(
                 {
-                  type: 'DATE_VALIDATION_ERROR',
+                  type: 'STATS_CALCULATION_ERROR',
                   message: '無効な日付が含まれています',
                   context: { prevDate: sortedDates[i - 1], currentDate: sortedDates[i] }
                 },

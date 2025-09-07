@@ -1,7 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MotivationService } from '../services/MotivationService';
-import { MotivationMessage } from '../types';
 
 /**
  * 継続促進機能を管理するカスタムフック

@@ -1,6 +1,5 @@
-import React from 'react';
 import { useMotivation } from '../hooks/useMotivation';
-import { MotivationMessage } from '../types';
+import type { MotivationMessage } from '../types';
 
 interface MotivationPanelProps {
   className?: string;

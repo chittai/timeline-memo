@@ -2,8 +2,12 @@
  * 日記機能のエラーハンドリングユーティリティ
  */
 
-import { DiaryError, DiaryErrorInfo, ErrorLevel, ErrorHandlerResult, ERROR_MESSAGES } from '../types/errors';
-import { DiaryEntry, CalendarDay, DiaryStats } from '../types';
+import type { DiaryError, DiaryErrorInfo, ErrorHandlerResult } from '../types/errors';
+import { ErrorLevel, ERROR_MESSAGES } from '../types/errors';
+import type { DiaryEntry, CalendarDay, DiaryStats } from '../types';
+
+// ErrorLevelとERROR_MESSAGESを再エクスポート
+export { ErrorLevel, ERROR_MESSAGES };
 
 /**
  * エラー情報を作成する

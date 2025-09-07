@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DateRange } from '../types';
+import type { DateRange } from '../types';
 
 interface DateRangeFilterProps {
   onDateRangeChange: (range: DateRange | null) => void;

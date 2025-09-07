@@ -69,6 +69,7 @@ export function useDiary() {
         type: 'ADD_TOAST', 
         payload: { 
           id: Date.now().toString(), 
+          title: validationResult.error.level === ErrorLevel.ERROR ? 'エラー' : '警告',
           message: displayMessage, 
           type: validationResult.error.level === ErrorLevel.ERROR ? 'error' : 'warning',
           duration: 5000
@@ -118,6 +119,7 @@ export function useDiary() {
         type: 'ADD_TOAST', 
         payload: { 
           id: Date.now().toString(), 
+          title: 'エラー',
           message: displayMessage, 
           type: 'error',
           duration: 5000

@@ -1,4 +1,4 @@
-import { Post, MotivationMessage, StreakAchievement } from '../types';
+import type { Post, MotivationMessage } from '../types';
 
 /**
  * 継続促進機能を提供するサービス

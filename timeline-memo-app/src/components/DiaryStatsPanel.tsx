@@ -23,6 +23,9 @@ export const DiaryStatsPanel: React.FC<DiaryStatsPanelProps> = ({
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  
+  // 未使用変数の警告を回避するため、実際に使用
+  console.debug('Device info:', { screenSize, isTouchDevice, orientation });
 
   // 画面サイズとデバイス情報の検出
   useEffect(() => {

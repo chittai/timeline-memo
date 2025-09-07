@@ -12,11 +12,11 @@ export interface BaseError {
 
 // 日記機能固有のエラー型
 export type DiaryError = 
-  | { type: 'DATE_RANGE_ERROR'; message: string; context?: { start?: Date; end?: Date } }
-  | { type: 'CALENDAR_GENERATION_ERROR'; message: string; context?: { year?: number; month?: number } }
-  | { type: 'STATS_CALCULATION_ERROR'; message: string; context?: { operation?: string; data?: any } }
-  | { type: 'DIARY_ENTRY_ERROR'; message: string; context?: { date?: string; postCount?: number } }
-  | { type: 'DATE_VALIDATION_ERROR'; message: string; context?: { invalidDate?: any } };
+  | { type: 'DATE_RANGE_ERROR'; message: string; context?: { start?: Date; end?: Date; originalError?: any } }
+  | { type: 'CALENDAR_GENERATION_ERROR'; message: string; context?: { year?: number; month?: number; postId?: string; postsCount?: number; createdAt?: Date; date?: Date | string; error?: any; originalError?: any } }
+  | { type: 'STATS_CALCULATION_ERROR'; message: string; context?: { operation?: string; data?: any; index?: number; error?: any; prevDate?: Date | string; currentDate?: string; datesCount?: number; originalError?: any; postId?: string; createdAt?: Date; postsCount?: number; partialStats?: any } }
+  | { type: 'DIARY_ENTRY_ERROR'; message: string; context?: { date?: string; postCount?: number; postId?: string; postsCount?: number; createdAt?: Date; error?: any; originalError?: any } }
+  | { type: 'DATE_VALIDATION_ERROR'; message: string; context?: { invalidDate?: any; date?: Date | string; start?: Date; end?: Date; originalError?: any } };
 
 // エラーレベル
 export enum ErrorLevel {

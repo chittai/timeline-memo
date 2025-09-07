@@ -296,10 +296,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 
                 {/* 右側: 統計パネル */}
                 <div className={`flex-shrink-0 ${screenSize === 'tablet' ? 'w-64' : 'w-80'}`}>
-                  <DiaryStatsPanel
+                  {stats && <DiaryStatsPanel
                     stats={stats}
                     isLoading={statsLoading}
-                  />
+                  />}
                 </div>
               </div>
             )}
@@ -309,10 +309,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <div className="space-y-3">
                 {/* 上部: 統計パネル（コンパクト表示） */}
                 <div className="h-48">
-                  <DiaryStatsPanel
+                  {stats && <DiaryStatsPanel
                     stats={stats}
                     isLoading={statsLoading}
-                  />
+                  />}
                 </div>
                 
                 {/* 下部: 日記ビュー */}
