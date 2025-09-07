@@ -5,6 +5,13 @@ import type { DiaryEntry, DateRange } from '../types';
 import type { DataService } from '../services/DataService';
 import { DiaryService } from '../services/DiaryService';
 import { IndexedDBService } from '../services/IndexedDBService';
+import { 
+  validateDateRange,
+  logDiaryError,
+  getErrorDisplayMessage,
+  createDiaryError,
+  ErrorLevel
+} from '../utils/diaryErrorUtils';
 
 // データサービスとDiaryServiceのインスタンス
 const dataService: DataService = new IndexedDBService();
@@ -50,6 +57,33 @@ export function useDiary() {
 
   // 指定した日付範囲の日記エントリーを読み込み
   const loadDiaryEntriesByDateRange = useCallback(async (dateRange: DateRange) => {
+    // 日付範囲のバリデーション
+    const validationResult = validateDateRange(dateRange.start, dateRange.end);
+    
+    if (!validationResult.success && validationResult.error) {
+      logDiaryError(validationResult.error);
+      
+      // ユーザーにエラーメッセージを表示
+      const displayMessage = getErrorDisplayMessage(validationResult.error);
+      dispatch({ 
+        type: 'ADD_TOAST', 
+        payload: { 
+          id: Date.now().toString(), 
+          message: displayMessage, 
+          type: validationResult.error.level === ErrorLevel.ERROR ? 'error' : 'warning',
+          duration: 5000
+        } 
+      });
+      
+      // 回復可能なエラーの場合は修正された日付を使用
+      if (validationResult.error.recoverable && validationResult.fallbackUsed && validationResult.data) {
+        dateRange = { start: validationResult.data.start, end: validationResult.data.end };
+      } else {
+        // 回復不可能なエラーの場合は処理を中断
+        return;
+      }
+    }
+
     const entries = await executeAsync(
       () => diaryService.getEntriesByDateRange(dateRange.start, dateRange.end),
       {
@@ -66,6 +100,32 @@ export function useDiary() {
 
   // 特定の日付の日記エントリーを取得
   const getEntryByDate = useCallback(async (date: Date): Promise<DiaryEntry | null> => {
+    // 日付の有効性チェック
+    if (isNaN(date.getTime())) {
+      const errorInfo = createDiaryError(
+        {
+          type: 'DATE_VALIDATION_ERROR',
+          message: '無効な日付が指定されました',
+          context: { invalidDate: date }
+        },
+        ErrorLevel.ERROR,
+        false
+      );
+      logDiaryError(errorInfo);
+      
+      const displayMessage = getErrorDisplayMessage(errorInfo);
+      dispatch({ 
+        type: 'ADD_TOAST', 
+        payload: { 
+          id: Date.now().toString(), 
+          message: displayMessage, 
+          type: 'error',
+          duration: 5000
+        } 
+      });
+      return null;
+    }
+
     return await executeAsync(
       () => diaryService.getEntryByDate(date),
       {
@@ -74,7 +134,7 @@ export function useDiary() {
         context: 'getEntryByDate'
       }
     );
-  }, [executeAsync]);
+  }, [executeAsync, dispatch]);
 
   // 日記統計の読み込み
   const loadDiaryStats = useCallback(async () => {

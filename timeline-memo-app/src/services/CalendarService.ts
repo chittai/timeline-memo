@@ -1,5 +1,12 @@
 import type { Post, CalendarDay } from '../types';
 import type { DataService } from './DataService';
+import { 
+  handleCalendarGenerationError,
+  logDiaryError,
+  createDiaryError,
+  ERROR_MESSAGES
+} from '../utils/diaryErrorUtils';
+import { ErrorLevel } from '../types/errors';
 
 /**
  * カレンダー機能を提供するサービスクラス
@@ -39,9 +46,23 @@ export class CalendarService {
    */
   async generateMonthlyCalendarData(year: number, month: number): Promise<CalendarDay[]> {
     try {
-      // 月の範囲のバリデーション
-      if (month < 1 || month > 12) {
-        throw new Error('月は1から12の間で指定してください');
+      // 入力値のバリデーション
+      const validation = this.validateDateRange(year, month);
+      if (!validation.isValid) {
+        const errorInfo = createDiaryError(
+          {
+            type: 'CALENDAR_GENERATION_ERROR',
+            message: validation.error || ERROR_MESSAGES.CALENDAR.INVALID_MONTH,
+            context: { year, month }
+          },
+          ErrorLevel.ERROR,
+          true
+        );
+        logDiaryError(errorInfo);
+        
+        // フォールバック処理を実行
+        const fallbackResult = handleCalendarGenerationError(year, month, new Error(validation.error));
+        return fallbackResult.data || [];
       }
 
       // 指定月の開始日と終了日を設定
@@ -57,8 +78,9 @@ export class CalendarService {
       // カレンダーデータを生成
       return this.generateCalendarDays(year, month, postsByDate);
     } catch (error) {
-      console.error('月別カレンダーデータの生成に失敗しました:', error);
-      throw new Error(`月別カレンダーデータの生成に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      // エラーハンドリング処理を実行
+      const fallbackResult = handleCalendarGenerationError(year, month, error);
+      return fallbackResult.data || [];
     }
   }
 
@@ -70,13 +92,41 @@ export class CalendarService {
   private groupPostsByDate(posts: Post[]): Map<string, Post[]> {
     const grouped = new Map<string, Post[]>();
     
-    posts.forEach(post => {
-      const dateKey = this.formatDateKey(post.createdAt);
-      if (!grouped.has(dateKey)) {
-        grouped.set(dateKey, []);
-      }
-      grouped.get(dateKey)!.push(post);
-    });
+    try {
+      posts.forEach(post => {
+        try {
+          const dateKey = this.formatDateKey(post.createdAt);
+          if (!grouped.has(dateKey)) {
+            grouped.set(dateKey, []);
+          }
+          grouped.get(dateKey)!.push(post);
+        } catch (error) {
+          // 個別の投稿でエラーが発生した場合はログに記録してスキップ
+          const errorInfo = createDiaryError(
+            {
+              type: 'CALENDAR_GENERATION_ERROR',
+              message: '投稿の日付処理でエラーが発生しました',
+              context: { postId: post.id, createdAt: post.createdAt, error }
+            },
+            ErrorLevel.WARNING,
+            true
+          );
+          logDiaryError(errorInfo);
+        }
+      });
+    } catch (error) {
+      // グループ化全体でエラーが発生した場合
+      const errorInfo = createDiaryError(
+        {
+          type: 'CALENDAR_GENERATION_ERROR',
+          message: '投稿のグループ化でエラーが発生しました',
+          context: { postsCount: posts.length, error }
+        },
+        ErrorLevel.ERROR,
+        true
+      );
+      logDiaryError(errorInfo);
+    }
     
     return grouped;
   }
@@ -169,6 +219,22 @@ export class CalendarService {
    */
   async getPostsForDate(date: Date): Promise<Post[]> {
     try {
+      // 日付の有効性チェック
+      if (isNaN(date.getTime())) {
+        const errorInfo = createDiaryError(
+          {
+            type: 'DATE_VALIDATION_ERROR',
+            message: ERROR_MESSAGES.VALIDATION.INVALID_DATE_FORMAT,
+            context: { invalidDate: date }
+          },
+          ErrorLevel.ERROR,
+          true,
+          []
+        );
+        logDiaryError(errorInfo);
+        return [];
+      }
+
       // 指定日の開始時刻と終了時刻を設定
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
@@ -182,8 +248,18 @@ export class CalendarService {
       // 作成日時の降順でソート
       return posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
-      console.error('指定日の投稿取得に失敗しました:', error);
-      throw new Error(`指定日の投稿取得に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      const errorInfo = createDiaryError(
+        {
+          type: 'CALENDAR_GENERATION_ERROR',
+          message: '指定日の投稿取得に失敗しました',
+          context: { date, error }
+        },
+        ErrorLevel.ERROR,
+        true,
+        []
+      );
+      logDiaryError(errorInfo);
+      return [];
     }
   }
 

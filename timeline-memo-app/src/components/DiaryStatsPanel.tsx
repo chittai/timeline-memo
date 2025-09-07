@@ -4,6 +4,8 @@ import type { DiaryStats } from '../types';
 interface DiaryStatsPanelProps {
   stats: DiaryStats;
   isLoading: boolean;
+  error?: string | null;
+  hasPartialData?: boolean;
 }
 
 /**
@@ -13,7 +15,9 @@ interface DiaryStatsPanelProps {
  */
 export const DiaryStatsPanel: React.FC<DiaryStatsPanelProps> = ({
   stats,
-  isLoading
+  isLoading,
+  error,
+  hasPartialData = false
 }) => {
   // デバイス情報の状態管理
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -68,11 +72,59 @@ export const DiaryStatsPanel: React.FC<DiaryStatsPanelProps> = ({
     );
   }
 
+  // エラー状態の表示
+  if (error && !hasPartialData) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="text-center py-8">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            統計情報の読み込みに失敗しました
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            {error}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            再読み込み
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        📊 統計情報
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">
+          📊 統計情報
+        </h3>
+        {hasPartialData && (
+          <div className="flex items-center text-amber-600 text-sm">
+            <span className="mr-1">⚠️</span>
+            <span>部分データ</span>
+          </div>
+        )}
+      </div>
+      
+      {/* エラーがあるが部分データが利用可能な場合の警告 */}
+      {error && hasPartialData && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-start">
+            <span className="text-amber-500 mr-2">⚠️</span>
+            <div>
+              <p className="text-sm text-amber-800 font-medium">
+                一部の統計情報の計算に失敗しました
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                利用可能なデータのみを表示しています
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="space-y-4">
         {/* 基本統計 */}

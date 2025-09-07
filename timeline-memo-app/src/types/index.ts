@@ -189,11 +189,8 @@ export type AppError =
   | { type: 'NETWORK_ERROR'; message: string }
   | { type: 'UNKNOWN_ERROR'; message: string };
 
-// 日記機能固有のエラー型
-export type DiaryError = 
-  | { type: 'DATE_RANGE_ERROR'; message: string }
-  | { type: 'CALENDAR_GENERATION_ERROR'; message: string }
-  | { type: 'STATS_CALCULATION_ERROR'; message: string };
+// エラーハンドリング関連の型をエクスポート
+export * from './errors';
 
 // Toast notification types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';

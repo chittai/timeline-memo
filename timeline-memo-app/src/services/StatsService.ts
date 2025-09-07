@@ -1,4 +1,11 @@
 import type { Post } from '../types';
+import { 
+  handleStatsCalculationError,
+  logDiaryError,
+  createDiaryError,
+  ErrorLevel,
+  ERROR_MESSAGES
+} from '../utils/diaryErrorUtils';
 
 /**
  * 日記統計情報の型定義
@@ -43,8 +50,92 @@ export class StatsService {
    * @returns 統計情報
    */
   static calculateDiaryStats(posts: Post[]): DiaryStats {
-    if (posts.length === 0) {
+    let partialStats: Partial<DiaryStats> = {};
+    
+    try {
+      if (posts.length === 0) {
+        return {
+          totalPosts: 0,
+          totalDays: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          thisMonthPosts: 0,
+          averagePostsPerDay: 0
+        };
+      }
+
+      // 基本統計（投稿数）は確実に計算できる
+      partialStats.totalPosts = posts.length;
+
+      let postsByDate: Map<string, Post[]> = new Map();
+      let uniqueDates: string[] = [];
+
+      try {
+        // 投稿を日付でグループ化
+        postsByDate = this.groupPostsByDate(posts);
+        uniqueDates = Array.from(postsByDate.keys()).sort();
+        partialStats.totalDays = uniqueDates.length;
+      } catch (error) {
+        const errorResult = handleStatsCalculationError('日付グループ化', error, partialStats);
+        if (errorResult.error) {
+          logDiaryError(errorResult.error);
+        }
+        partialStats.totalDays = 0;
+      }
+
+      try {
+        // 継続日数計算
+        const streakResult = this.calculateStreak(uniqueDates);
+        partialStats.currentStreak = streakResult.current;
+        partialStats.longestStreak = streakResult.longest;
+      } catch (error) {
+        const errorResult = handleStatsCalculationError('継続日数計算', error, partialStats);
+        if (errorResult.error) {
+          logDiaryError(errorResult.error);
+        }
+        partialStats.currentStreak = 0;
+        partialStats.longestStreak = 0;
+      }
+
+      try {
+        // 今月の投稿数計算
+        partialStats.thisMonthPosts = this.calculateThisMonthPosts(posts);
+      } catch (error) {
+        const errorResult = handleStatsCalculationError('今月の投稿数計算', error, partialStats);
+        if (errorResult.error) {
+          logDiaryError(errorResult.error);
+        }
+        partialStats.thisMonthPosts = 0;
+      }
+
+      try {
+        // 平均投稿数計算
+        const totalDays = partialStats.totalDays || 0;
+        const averagePostsPerDay = totalDays > 0 ? posts.length / totalDays : 0;
+        partialStats.averagePostsPerDay = Math.round(averagePostsPerDay * 100) / 100;
+      } catch (error) {
+        const errorResult = handleStatsCalculationError('平均投稿数計算', error, partialStats);
+        if (errorResult.error) {
+          logDiaryError(errorResult.error);
+        }
+        partialStats.averagePostsPerDay = 0;
+      }
+
       return {
+        totalPosts: partialStats.totalPosts || 0,
+        totalDays: partialStats.totalDays || 0,
+        currentStreak: partialStats.currentStreak || 0,
+        longestStreak: partialStats.longestStreak || 0,
+        thisMonthPosts: partialStats.thisMonthPosts || 0,
+        averagePostsPerDay: partialStats.averagePostsPerDay || 0
+      };
+    } catch (error) {
+      // 全体的なエラーの場合
+      const errorResult = handleStatsCalculationError('統計情報計算', error, partialStats);
+      if (errorResult.error) {
+        logDiaryError(errorResult.error);
+      }
+      return errorResult.data || {
         totalPosts: 0,
         totalDays: 0,
         currentStreak: 0,
@@ -53,32 +144,6 @@ export class StatsService {
         averagePostsPerDay: 0
       };
     }
-
-    // 投稿を日付でグループ化
-    const postsByDate = this.groupPostsByDate(posts);
-    const uniqueDates = Array.from(postsByDate.keys()).sort();
-    
-    // 基本統計
-    const totalPosts = posts.length;
-    const totalDays = uniqueDates.length;
-    
-    // 継続日数計算
-    const streakResult = this.calculateStreak(uniqueDates);
-    
-    // 今月の投稿数計算
-    const thisMonthPosts = this.calculateThisMonthPosts(posts);
-    
-    // 平均投稿数計算
-    const averagePostsPerDay = totalDays > 0 ? totalPosts / totalDays : 0;
-
-    return {
-      totalPosts,
-      totalDays,
-      currentStreak: streakResult.current,
-      longestStreak: streakResult.longest,
-      thisMonthPosts,
-      averagePostsPerDay: Math.round(averagePostsPerDay * 100) / 100 // 小数点以下2桁
-    };
   }
 
   /**
@@ -87,49 +152,124 @@ export class StatsService {
    * @returns 現在の継続日数と最長継続日数
    */
   static calculateStreak(sortedDates: string[]): StreakResult {
-    if (sortedDates.length === 0) {
+    try {
+      if (sortedDates.length === 0) {
+        return { current: 0, longest: 0 };
+      }
+
+      const today = new Date();
+      const todayStr = this.formatDateToString(today);
+      const yesterdayStr = this.formatDateToString(new Date(today.getTime() - 24 * 60 * 60 * 1000));
+
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let tempStreak = 1;
+
+      try {
+        // 現在の継続日数を計算
+        // 今日または昨日に投稿があるかチェック
+        const hasPostToday = sortedDates.includes(todayStr);
+        const hasPostYesterday = sortedDates.includes(yesterdayStr);
+        
+        if (hasPostToday || hasPostYesterday) {
+          // 最新の投稿日から遡って継続日数を計算
+          const startDate = hasPostToday ? todayStr : yesterdayStr;
+          currentStreak = this.calculateStreakFromDate(sortedDates, startDate);
+        }
+      } catch (error) {
+        const errorInfo = createDiaryError(
+          {
+            type: 'STATS_CALCULATION_ERROR',
+            message: '現在の継続日数計算でエラーが発生しました',
+            context: { operation: 'current streak', error }
+          },
+          ErrorLevel.WARNING,
+          true
+        );
+        logDiaryError(errorInfo);
+        currentStreak = 0;
+      }
+
+      try {
+        // 最長継続日数を計算
+        for (let i = 1; i < sortedDates.length; i++) {
+          try {
+            const prevDate = new Date(sortedDates[i - 1]);
+            const currentDate = new Date(sortedDates[i]);
+            
+            // 日付の有効性チェック
+            if (isNaN(prevDate.getTime()) || isNaN(currentDate.getTime())) {
+              const errorInfo = createDiaryError(
+                {
+                  type: 'DATE_VALIDATION_ERROR',
+                  message: '無効な日付が含まれています',
+                  context: { prevDate: sortedDates[i - 1], currentDate: sortedDates[i] }
+                },
+                ErrorLevel.WARNING,
+                true
+              );
+              logDiaryError(errorInfo);
+              continue;
+            }
+
+            const dayDiff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000));
+
+            if (dayDiff === 1) {
+              // 連続している場合
+              tempStreak++;
+            } else {
+              // 連続が途切れた場合
+              longestStreak = Math.max(longestStreak, tempStreak);
+              tempStreak = 1;
+            }
+          } catch (error) {
+            const errorInfo = createDiaryError(
+              {
+                type: 'STATS_CALCULATION_ERROR',
+                message: '最長継続日数計算中にエラーが発生しました',
+                context: { index: i, error }
+              },
+              ErrorLevel.WARNING,
+              true
+            );
+            logDiaryError(errorInfo);
+            // エラーが発生した場合は現在のストリークをリセット
+            longestStreak = Math.max(longestStreak, tempStreak);
+            tempStreak = 1;
+          }
+        }
+        
+        // 最後のストリークもチェック
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } catch (error) {
+        const errorInfo = createDiaryError(
+          {
+            type: 'STATS_CALCULATION_ERROR',
+            message: ERROR_MESSAGES.STATS.STREAK_CALCULATION_ERROR,
+            context: { operation: 'longest streak', error }
+          },
+          ErrorLevel.WARNING,
+          true
+        );
+        logDiaryError(errorInfo);
+        longestStreak = 0;
+      }
+
+      return { current: currentStreak, longest: longestStreak };
+    } catch (error) {
+      const errorInfo = createDiaryError(
+        {
+          type: 'STATS_CALCULATION_ERROR',
+          message: ERROR_MESSAGES.STATS.STREAK_CALCULATION_ERROR,
+          context: { datesCount: sortedDates.length, error }
+        },
+        ErrorLevel.ERROR,
+        true,
+        { current: 0, longest: 0 }
+      );
+      logDiaryError(errorInfo);
       return { current: 0, longest: 0 };
     }
-
-    const today = new Date();
-    const todayStr = this.formatDateToString(today);
-    const yesterdayStr = this.formatDateToString(new Date(today.getTime() - 24 * 60 * 60 * 1000));
-
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 1;
-
-    // 現在の継続日数を計算
-    // 今日または昨日に投稿があるかチェック
-    const hasPostToday = sortedDates.includes(todayStr);
-    const hasPostYesterday = sortedDates.includes(yesterdayStr);
-    
-    if (hasPostToday || hasPostYesterday) {
-      // 最新の投稿日から遡って継続日数を計算
-      const startDate = hasPostToday ? todayStr : yesterdayStr;
-      currentStreak = this.calculateStreakFromDate(sortedDates, startDate);
-    }
-
-    // 最長継続日数を計算
-    for (let i = 1; i < sortedDates.length; i++) {
-      const prevDate = new Date(sortedDates[i - 1]);
-      const currentDate = new Date(sortedDates[i]);
-      const dayDiff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000));
-
-      if (dayDiff === 1) {
-        // 連続している場合
-        tempStreak++;
-      } else {
-        // 連続が途切れた場合
-        longestStreak = Math.max(longestStreak, tempStreak);
-        tempStreak = 1;
-      }
-    }
-    
-    // 最後のストリークもチェック
-    longestStreak = Math.max(longestStreak, tempStreak);
-
-    return { current: currentStreak, longest: longestStreak };
   }
 
   /**
@@ -257,13 +397,41 @@ export class StatsService {
   private static groupPostsByDate(posts: Post[]): Map<string, Post[]> {
     const grouped = new Map<string, Post[]>();
 
-    posts.forEach(post => {
-      const dateKey = this.formatDateToString(new Date(post.createdAt));
-      if (!grouped.has(dateKey)) {
-        grouped.set(dateKey, []);
-      }
-      grouped.get(dateKey)!.push(post);
-    });
+    try {
+      posts.forEach(post => {
+        try {
+          const dateKey = this.formatDateToString(new Date(post.createdAt));
+          if (!grouped.has(dateKey)) {
+            grouped.set(dateKey, []);
+          }
+          grouped.get(dateKey)!.push(post);
+        } catch (error) {
+          // 個別の投稿でエラーが発生した場合はログに記録してスキップ
+          const errorInfo = createDiaryError(
+            {
+              type: 'STATS_CALCULATION_ERROR',
+              message: '投稿の日付処理でエラーが発生しました',
+              context: { postId: post.id, createdAt: post.createdAt, error }
+            },
+            ErrorLevel.WARNING,
+            true
+          );
+          logDiaryError(errorInfo);
+        }
+      });
+    } catch (error) {
+      // グループ化全体でエラーが発生した場合
+      const errorInfo = createDiaryError(
+        {
+          type: 'STATS_CALCULATION_ERROR',
+          message: '投稿のグループ化でエラーが発生しました',
+          context: { postsCount: posts.length, error }
+        },
+        ErrorLevel.ERROR,
+        true
+      );
+      logDiaryError(errorInfo);
+    }
 
     return grouped;
   }
