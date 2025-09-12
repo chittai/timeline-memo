@@ -1,7 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MotivationPanel } from '../MotivationPanel';
 import { MotivationMessage } from '../../types';
+import { 
+  renderWithProviders, 
+  waitForElementToBeVisible, 
+  assertElementExists,
+  findByTextAndAssertVisible,
+  assertElementNotExists
+} from '../../test/helpers/renderHelpers';
+import { 
+  createMockMotivationMessage 
+} from '../../test/fixtures/testData';
 
 // useMotivationフックのモック
 const mockDismissMessage = vi.fn();
@@ -29,6 +39,307 @@ describe('MotivationPanel', () => {
       motivationMessages: [],
       daysSinceLastPost: 0,
       streakInfo: { current: 0, longest: 0 }
+    });
+  });
+
+  describe('表示確認テスト', () => {
+    it('モチベーションメッセージが正しく表示されることを確認する', async () => {
+      const testMessage = createMockMotivationMessage({
+        id: 'test-message-1',
+        type: 'encouragement',
+        title: '投稿をお待ちしています',
+        message: '今日の出来事を記録してみませんか？',
+        isVisible: true
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [testMessage],
+        daysSinceLastPost: 2,
+        streakInfo: { current: 5, longest: 10 }
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // メインコンテナが表示されていることを確認
+      const mainContainer = assertElementExists(container, '.space-y-3');
+      await waitForElementToBeVisible(mainContainer);
+
+      // 継続状況の概要が表示されていることを確認
+      const summarySection = assertElementExists(container, '.bg-white.rounded-lg.border');
+      await waitForElementToBeVisible(summarySection);
+
+      // メッセージタイトルが表示されていることを確認
+      const messageTitle = await findByTextAndAssertVisible('投稿をお待ちしています');
+      expect(messageTitle).toBeInTheDocument();
+
+      // メッセージ内容が表示されていることを確認
+      const messageContent = await findByTextAndAssertVisible('今日の出来事を記録してみませんか？');
+      expect(messageContent).toBeInTheDocument();
+
+      // メッセージアイコンが表示されていることを確認
+      const messageIcon = await findByTextAndAssertVisible('💭');
+      expect(messageIcon).toBeInTheDocument();
+    });
+
+    it('統計データが正しく表示されることを確認する', async () => {
+      const testMessage = createMockMotivationMessage({
+        isVisible: true
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [testMessage],
+        daysSinceLastPost: 3,
+        streakInfo: { current: 7, longest: 15 }
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 最後の投稿からの日数が表示されていることを確認
+      const lastPostText = await findByTextAndAssertVisible('最後の投稿から:');
+      expect(lastPostText).toBeInTheDocument();
+      
+      const lastPostDays = await findByTextAndAssertVisible('3日');
+      expect(lastPostDays).toBeInTheDocument();
+
+      // 現在の連続記録が表示されていることを確認
+      const currentStreakText = await findByTextAndAssertVisible('現在の連続記録:');
+      expect(currentStreakText).toBeInTheDocument();
+      
+      const currentStreakDays = await findByTextAndAssertVisible('7日');
+      expect(currentStreakDays).toBeInTheDocument();
+
+      // 最長記録が表示されていることを確認
+      const longestStreakText = await findByTextAndAssertVisible('最長記録:');
+      expect(longestStreakText).toBeInTheDocument();
+      
+      const longestStreakDays = await findByTextAndAssertVisible('15日');
+      expect(longestStreakDays).toBeInTheDocument();
+    });
+
+    it('メッセージタイプ別のスタイルが正しく表示されることを確認する', async () => {
+      const encouragementMessage = createMockMotivationMessage({
+        id: 'encouragement-msg',
+        type: 'encouragement',
+        title: '促進メッセージ',
+        isVisible: true
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [encouragementMessage]
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 促進メッセージのスタイルが適用されていることを確認
+      const messageElement = await screen.findByRole('alert');
+      await waitForElementToBeVisible(messageElement);
+      
+      expect(messageElement).toHaveClass('bg-yellow-50', 'border-yellow-200', 'text-yellow-800');
+    });
+
+    it('達成メッセージのスタイルが正しく表示されることを確認する', async () => {
+      const achievementMessage = createMockMotivationMessage({
+        id: 'achievement-msg',
+        type: 'achievement',
+        title: '達成メッセージ',
+        isVisible: true
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [achievementMessage]
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 達成メッセージのスタイルが適用されていることを確認
+      const messageElement = await screen.findByRole('alert');
+      await waitForElementToBeVisible(messageElement);
+      
+      expect(messageElement).toHaveClass('bg-green-50', 'border-green-200', 'text-green-800');
+    });
+
+    it('リマインダーメッセージのスタイルが正しく表示されることを確認する', async () => {
+      const reminderMessage = createMockMotivationMessage({
+        id: 'reminder-msg',
+        type: 'reminder',
+        title: 'リマインダーメッセージ',
+        isVisible: true
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [reminderMessage]
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // リマインダーメッセージのスタイルが適用されていることを確認
+      const messageElement = await screen.findByRole('alert');
+      await waitForElementToBeVisible(messageElement);
+      
+      expect(messageElement).toHaveClass('bg-blue-50', 'border-blue-200', 'text-blue-800');
+    });
+
+    it('閉じるボタンが正しく表示されることを確認する', async () => {
+      const testMessage = createMockMotivationMessage({
+        isVisible: true
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [testMessage]
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 閉じるボタンが表示されていることを確認
+      const closeButton = await screen.findByLabelText('メッセージを閉じる');
+      await waitForElementToBeVisible(closeButton);
+      
+      expect(closeButton).toBeInTheDocument();
+
+      // SVGアイコンが表示されていることを確認
+      const svgIcon = closeButton.querySelector('svg');
+      expect(svgIcon).toBeInTheDocument();
+      await waitForElementToBeVisible(svgIcon as HTMLElement);
+    });
+
+    it('追加情報が正しく表示されることを確認する', async () => {
+      const messageWithDetails = createMockMotivationMessage({
+        id: 'detailed-msg',
+        type: 'encouragement',
+        title: '詳細付きメッセージ',
+        message: 'メッセージ内容',
+        daysSinceLastPost: 5,
+        streakCount: 10,
+        isVisible: true
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [messageWithDetails]
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 投稿なし日数の追加情報が表示されていることを確認
+      const daysSinceText = await findByTextAndAssertVisible('5日間投稿がありません');
+      expect(daysSinceText).toBeInTheDocument();
+
+      // 連続記録の追加情報が表示されていることを確認
+      const streakText = await findByTextAndAssertVisible('10日連続達成！');
+      expect(streakText).toBeInTheDocument();
+    });
+
+    it('期限付きメッセージで期限が正しく表示されることを確認する', async () => {
+      const expiryDate = new Date('2024-12-31T23:59:59Z');
+      const messageWithExpiry = createMockMotivationMessage({
+        id: 'expiry-msg',
+        title: '期限付きメッセージ',
+        isVisible: true,
+        expiresAt: expiryDate
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [messageWithExpiry]
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 期限表示が表示されていることを確認
+      await waitFor(() => {
+        expect(screen.getByText(/期限:/)).toBeInTheDocument();
+      });
+
+      // 期限の境界線が表示されていることを確認
+      const expirySection = assertElementExists(container, '.border-t.border-current.border-opacity-20');
+      await waitForElementToBeVisible(expirySection);
+    });
+
+    it('複数メッセージが正しく表示されることを確認する', async () => {
+      const messages = [
+        createMockMotivationMessage({
+          id: 'msg-1',
+          type: 'encouragement',
+          title: 'メッセージ1',
+          isVisible: true
+        }),
+        createMockMotivationMessage({
+          id: 'msg-2',
+          type: 'achievement',
+          title: 'メッセージ2',
+          isVisible: true
+        }),
+        createMockMotivationMessage({
+          id: 'msg-3',
+          type: 'reminder',
+          title: 'メッセージ3',
+          isVisible: true
+        })
+      ];
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: messages
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 全てのメッセージが表示されていることを確認
+      const message1 = await findByTextAndAssertVisible('メッセージ1');
+      const message2 = await findByTextAndAssertVisible('メッセージ2');
+      const message3 = await findByTextAndAssertVisible('メッセージ3');
+
+      expect(message1).toBeInTheDocument();
+      expect(message2).toBeInTheDocument();
+      expect(message3).toBeInTheDocument();
+
+      // 3つのアラート要素が存在することを確認
+      const alertElements = screen.getAllByRole('alert');
+      expect(alertElements).toHaveLength(3);
+
+      // 各アラート要素が表示されていることを確認
+      for (const alert of alertElements) {
+        await waitForElementToBeVisible(alert);
+      }
+    });
+
+    it('非表示メッセージが表示されないことを確認する', async () => {
+      const visibleMessage = createMockMotivationMessage({
+        id: 'visible-msg',
+        title: '表示メッセージ',
+        isVisible: true
+      });
+
+      const hiddenMessage = createMockMotivationMessage({
+        id: 'hidden-msg',
+        title: '非表示メッセージ',
+        isVisible: false
+      });
+
+      Object.assign(mockMotivationData, {
+        motivationMessages: [visibleMessage, hiddenMessage]
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // 表示メッセージが表示されていることを確認
+      const visibleText = await findByTextAndAssertVisible('表示メッセージ');
+      expect(visibleText).toBeInTheDocument();
+
+      // 非表示メッセージが表示されていないことを確認
+      expect(screen.queryByText('非表示メッセージ')).not.toBeInTheDocument();
+
+      // アラート要素が1つだけ存在することを確認
+      const alertElements = screen.getAllByRole('alert');
+      expect(alertElements).toHaveLength(1);
+    });
+
+    it('メッセージがない場合は何も表示されないことを確認する', () => {
+      Object.assign(mockMotivationData, {
+        motivationMessages: []
+      });
+
+      const { container } = render(<MotivationPanel />);
+
+      // コンテナが空であることを確認
+      expect(container.firstChild).toBeNull();
     });
   });
 

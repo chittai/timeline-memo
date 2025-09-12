@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PostForm } from './PostForm';
+
 
 /**
  * ヘッダーコンポーネント
@@ -31,9 +31,7 @@ const Header: React.FC = () => {
     setShowPostForm(prev => !prev);
   };
 
-  const handleSubmitSuccess = () => {
-    setShowPostForm(false);
-  };
+
 
   // ヘッダーのクラス名を動的に生成
   const getHeaderClasses = () => {
@@ -123,10 +121,10 @@ const Header: React.FC = () => {
           {/* 投稿フォーム */}
           {showPostForm && (
             <div className={isMobile ? "mt-2" : "mt-4"}>
-              <PostForm 
-                onSubmitSuccess={handleSubmitSuccess}
-                className={isMobile ? "w-full" : "max-w-4xl mx-auto"}
-              />
+              {/* PostForm - 一時的に無効化 */}
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-800">投稿機能は新しいアプリで利用可能です</p>
+              </div>
             </div>
           )}
         </div>

@@ -37,7 +37,7 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
   // パフォーマンス監視
   useRenderTime('PostListPanel');
   
-  const { posts, isLoading, error, selectPost, deletePost } = usePosts();
+  const { posts, isLoading, error, selectPost, deletePost, updatePost } = usePosts();
   const { state } = useAppContext();
   const { highlightedPostIds } = state;
   const { showSuccess } = useErrorHandler();
@@ -370,10 +370,15 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
       {editingPost && (
         <div className={`flex-shrink-0 ${isMobile ? 'mb-2' : 'mb-4'}`}>
           <PostForm
-            editingPost={editingPost}
-            onSubmitSuccess={handleEditComplete}
+            onSubmit={async (content: string) => {
+              if (editingPost) {
+                await updatePost(editingPost.id, content);
+                handleEditComplete();
+              }
+            }}
             onCancel={handleEditCancel}
-            className="border-2 border-blue-200"
+            initialContent={editingPost?.content || ''}
+            isEditing={true}
           />
         </div>
       )}

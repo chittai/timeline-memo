@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback, useState, useEffect } from 'react';
 import PostItem from './PostItem';
-import { PostForm } from './PostForm';
+
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { DateRangeFilter } from './DateRangeFilter';
 import { usePosts } from '../hooks/usePosts';
@@ -123,15 +123,7 @@ const DiaryView: React.FC<DiaryViewProps> = ({
     setEditingPost(post);
   }, []);
 
-  // 編集完了ハンドラー
-  const handleEditComplete = useCallback(() => {
-    setEditingPost(null);
-  }, []);
 
-  // 編集キャンセルハンドラー
-  const handleEditCancel = useCallback(() => {
-    setEditingPost(null);
-  }, []);
 
   // 投稿削除ハンドラー（確認ダイアログ表示）
   const handlePostDelete = useCallback((postId: string) => {
@@ -257,12 +249,10 @@ const DiaryView: React.FC<DiaryViewProps> = ({
       {/* 編集フォーム（編集モード時） */}
       {editingPost && (
         <div className={`flex-shrink-0 ${isMobile ? 'mb-2' : 'mb-4'}`}>
-          <PostForm
-            editingPost={editingPost}
-            onSubmitSuccess={handleEditComplete}
-            onCancel={handleEditCancel}
-            className="border-2 border-blue-200"
-          />
+          {/* PostForm - 一時的に無効化 */}
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800">編集機能は新しいPostFormで利用可能です</p>
+          </div>
         </div>
       )}
 
