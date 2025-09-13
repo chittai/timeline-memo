@@ -40,8 +40,21 @@ jobs:
     - name: Lint code
       run: |
         cd timeline-memo-app
-        npm run lint || echo "Linting failed but continuing"
-      continue-on-error: true
+        npm run lint
+        
+    - name: Run tests
+      run: |
+        cd timeline-memo-app
+        npm run test:run
+      env:
+        CI: true
+        
+    - name: Test failure notification
+      if: failure()
+      run: |
+        echo "❌ テストが失敗しました。デプロイを停止します。"
+        echo "詳細なテスト結果を確認してください。"
+        exit 1
         
     - name: Build application
       run: |

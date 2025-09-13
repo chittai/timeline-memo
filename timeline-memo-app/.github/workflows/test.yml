@@ -1,0 +1,232 @@
+name: テストスイート実行
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+# 権限設定
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+# 同時実行の制御
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: テスト実行
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: リポジトリのチェックアウト
+      uses: actions/checkout@v4
+      
+    - name: Node.jsのセットアップ
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: timeline-memo-app/package-lock.json
+        
+    - name: 依存関係のインストール
+      run: |
+        cd timeline-memo-app
+        npm ci
+        
+    - name: コードの静的解析（ESLint）
+      run: |
+        cd timeline-memo-app
+        npm run lint
+        
+    - name: テスト実行（カバレッジ付き）
+      run: |
+        cd timeline-memo-app
+        npm run test:coverage
+        
+    - name: カバレッジレポートのアップロード
+      uses: codecov/codecov-action@v3
+      if: always()
+      with:
+        file: ./timeline-memo-app/coverage/lcov.info
+        directory: ./timeline-memo-app/coverage/
+        flags: unittests
+        name: timeline-memo-app-coverage
+        fail_ci_if_error: false
+        verbose: true
+        
+    - name: カバレッジレポートの保存
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: timeline-memo-app/coverage/
+        retention-days: 30
+        
+    - name: テスト結果の保存
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          timeline-memo-app/coverage/
+          timeline-memo-app/test-results/
+        retention-days: 30
+
+  # PRコメント用ジョブ
+  comment:
+    name: PRコメント投稿
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request' && always()
+    
+    steps:
+    - name: リポジトリのチェックアウト
+      uses: actions/checkout@v4
+      
+    - name: カバレッジレポートのダウンロード
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage/
+      continue-on-error: true
+        
+    - name: テスト結果をPRにコメント
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // テスト結果の取得
+          const testStatus = '${{ needs.test.result }}';
+          let coverageData = null;
+          let testFailureDetails = null;
+          
+          try {
+            // カバレッジ情報の読み取り
+            const coverageSummaryPath = path.join('coverage', 'coverage-summary.json');
+            if (fs.existsSync(coverageSummaryPath)) {
+              const coverageContent = fs.readFileSync(coverageSummaryPath, 'utf8');
+              coverageData = JSON.parse(coverageContent);
+            }
+          } catch (error) {
+            console.log('カバレッジデータの読み取りに失敗:', error.message);
+          }
+          
+          // テスト失敗時の詳細情報取得
+          if (testStatus === 'failure') {
+            try {
+              // GitHub APIからワークフロー実行の詳細を取得
+              const { data: workflowRun } = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId
+              });
+              
+              const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId
+              });
+              
+              const failedJob = jobs.jobs.find(job => job.conclusion === 'failure');
+              if (failedJob) {
+                testFailureDetails = {
+                  jobName: failedJob.name,
+                  conclusion: failedJob.conclusion,
+                  startedAt: failedJob.started_at,
+                  completedAt: failedJob.completed_at
+                };
+              }
+            } catch (error) {
+              console.log('テスト失敗詳細の取得に失敗:', error.message);
+            }
+          }
+          
+          // コメント内容の作成
+          let commentBody = `## 🧪 テスト実行結果\n\n`;
+          
+          if (testStatus === 'success') {
+            commentBody += `✅ **テスト成功** - すべてのテストが正常に完了しました\n\n`;
+          } else if (testStatus === 'failure') {
+            commentBody += `❌ **テスト失敗** - テストでエラーが発生しました\n\n`;
+            
+            // テスト失敗の詳細情報を追加
+            if (testFailureDetails) {
+              commentBody += `### 🔍 失敗詳細\n\n`;
+              commentBody += `- **失敗したジョブ**: ${testFailureDetails.jobName}\n`;
+              commentBody += `- **実行時間**: ${new Date(testFailureDetails.startedAt).toLocaleString('ja-JP')} - ${new Date(testFailureDetails.completedAt).toLocaleString('ja-JP')}\n`;
+              commentBody += `- **結果**: ${testFailureDetails.conclusion}\n\n`;
+            }
+            
+            commentBody += `### 🛠️ 対処方法\n\n`;
+            commentBody += `1. ローカルで \`npm run test\` を実行してテストを確認\n`;
+            commentBody += `2. 失敗したテストを修正\n`;
+            commentBody += `3. \`npm run lint\` でコードスタイルを確認\n`;
+            commentBody += `4. 修正後に再度プッシュ\n\n`;
+          } else {
+            commentBody += `⚠️ **テスト状態不明** - テストの実行状態を確認してください\n\n`;
+          }
+          
+          // カバレッジ情報の追加
+          if (coverageData && coverageData.total) {
+            const { lines, functions, branches, statements } = coverageData.total;
+            
+            commentBody += `### 📊 コードカバレッジ\n\n`;
+            commentBody += `| 項目 | カバレッジ |\n`;
+            commentBody += `|------|----------|\n`;
+            commentBody += `| 行 | ${lines.pct}% (${lines.covered}/${lines.total}) |\n`;
+            commentBody += `| 関数 | ${functions.pct}% (${functions.covered}/${functions.total}) |\n`;
+            commentBody += `| 分岐 | ${branches.pct}% (${branches.covered}/${branches.total}) |\n`;
+            commentBody += `| 文 | ${statements.pct}% (${statements.covered}/${statements.total}) |\n\n`;
+            
+            // カバレッジしきい値の確認
+            const threshold = 80;
+            const overallCoverage = Math.min(lines.pct, functions.pct, branches.pct, statements.pct);
+            
+            if (overallCoverage >= threshold) {
+              commentBody += `✅ カバレッジしきい値（${threshold}%）を満たしています\n\n`;
+            } else {
+              commentBody += `⚠️ カバレッジしきい値（${threshold}%）を下回っています（現在: ${overallCoverage}%）\n\n`;
+            }
+          }
+          
+          commentBody += `### 🔗 詳細情報\n\n`;
+          commentBody += `- [ワークフロー実行結果](${context.payload.pull_request.html_url}/checks)\n`;
+          commentBody += `- [カバレッジレポート](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\n`;
+          commentBody += `---\n`;
+          commentBody += `*このコメントは自動生成されました（実行ID: ${context.runId}）*`;
+          
+          // 既存のコメントを検索
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('🧪 テスト実行結果')
+          );
+          
+          // コメントの投稿または更新
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: commentBody
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+          }
