@@ -37,7 +37,7 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
   // パフォーマンス監視
   useRenderTime('PostListPanel');
   
-  const { posts, isLoading, error, selectPost, deletePost, updatePost } = usePosts();
+  const { posts, isLoading, error, selectPost, deletePost, updatePost, createPost } = usePosts();
   const { state } = useAppContext();
   const { highlightedPostIds } = state;
   const { showSuccess } = useErrorHandler();
@@ -64,10 +64,11 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
     };
   }, []);
   
-  // 編集・削除の状態管理
+  // 編集・削除・作成の状態管理
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [deletingPost, setDeletingPost] = useState<Post | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   // 投稿を新しい順（降順）でソート - useMemoでメモ化
   const sortedPosts = useMemo(() => {
@@ -135,6 +136,28 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
   // 編集キャンセルハンドラー
   const handleEditCancel = useCallback(() => {
     setEditingPost(null);
+  }, []);
+
+  // 新規投稿作成ハンドラー
+  const handleCreatePost = useCallback(async (content: string) => {
+    console.log('投稿作成を開始:', content);
+    try {
+      const newPost = await createPost(content);
+      console.log('投稿作成結果:', newPost);
+      if (newPost) {
+        setShowCreateForm(false);
+        showSuccess('投稿を作成しました', '新しい投稿がタイムラインに追加されました');
+      } else {
+        console.error('投稿作成に失敗: newPostがnull');
+      }
+    } catch (error) {
+      console.error('投稿作成エラー:', error);
+    }
+  }, [createPost, showSuccess]);
+
+  // 作成フォームキャンセルハンドラー
+  const handleCreateCancel = useCallback(() => {
+    setShowCreateForm(false);
   }, []);
 
   // 投稿削除ハンドラー（確認ダイアログ表示）
@@ -350,15 +373,63 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
   // 投稿が空の状態
   if (sortedPosts.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center text-gray-500">
-          <svg className={`${getEmptyStateIconSize()} mx-auto ${isMobile ? 'mb-2' : 'mb-3'} text-gray-300`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <p className={`${textSizes.emptyTitle} font-medium mb-1`}>まだ投稿がありません</p>
-          {!isMobile && (
-            <p className={textSizes.emptySubtitle}>上部のフォームから最初の投稿を作成してみましょう</p>
-          )}
+      <div className="h-full flex flex-col">
+        {/* 新規投稿フォーム（作成モード時） */}
+        {showCreateForm && (
+          <div className={`flex-shrink-0 ${isMobile ? 'mb-2' : 'mb-4'}`}>
+            <PostForm
+              onSubmit={handleCreatePost}
+              onCancel={handleCreateCancel}
+              initialContent=""
+              isEditing={false}
+            />
+          </div>
+        )}
+
+        {/* ヘッダー（空の状態でも表示） */}
+        <div className={`flex-shrink-0 ${isMobile ? 'pb-2' : 'pb-3'} border-b border-gray-200`}>
+          <div className="flex justify-between items-center">
+            <h2 className={`${textSizes.header} font-semibold text-gray-800`}>
+              投稿リスト
+            </h2>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  showCreateForm
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                } shadow-sm`}
+              >
+                {showCreateForm ? 'キャンセル' : '✍️ 新規投稿'}
+              </button>
+              {/* 開発用テストボタン */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  onClick={async () => {
+                    console.log('テスト投稿作成開始');
+                    await handleCreatePost('これはテスト投稿です。投稿機能が正常に動作しているかを確認するためのサンプルテキストです。');
+                  }}
+                  className="px-2 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  テスト投稿
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 空の状態メッセージ */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <svg className={`${getEmptyStateIconSize()} mx-auto ${isMobile ? 'mb-2' : 'mb-3'} text-gray-300`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p className={`${textSizes.emptyTitle} font-medium mb-1`}>まだ投稿がありません</p>
+            <p className={textSizes.emptySubtitle}>
+              上部の「✍️ 新規投稿」ボタンから最初の投稿を作成してみましょう
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -366,6 +437,18 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col">
+      {/* 新規投稿フォーム（作成モード時） */}
+      {showCreateForm && !editingPost && (
+        <div className={`flex-shrink-0 ${isMobile ? 'mb-2' : 'mb-4'}`}>
+          <PostForm
+            onSubmit={handleCreatePost}
+            onCancel={handleCreateCancel}
+            initialContent=""
+            isEditing={false}
+          />
+        </div>
+      )}
+
       {/* 編集フォーム（編集モード時） */}
       {editingPost && (
         <div className={`flex-shrink-0 ${isMobile ? 'mb-2' : 'mb-4'}`}>
@@ -389,9 +472,34 @@ const PostListPanel: React.FC<PostListPanelProps> = ({
           <h2 className={`${textSizes.header} font-semibold text-gray-800`}>
             投稿リスト
           </h2>
-          <span className={`${textSizes.count} text-gray-500`}>
-            {isMobile ? `${sortedPosts.length}件` : `${sortedPosts.length}件の投稿`}
-          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              disabled={!!editingPost}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                showCreateForm
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              } disabled:opacity-50 disabled:cursor-not-allowed shadow-sm`}
+            >
+              {showCreateForm ? 'キャンセル' : '✍️ 新規投稿'}
+            </button>
+            {/* 開発用テストボタン */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={async () => {
+                  console.log('テスト投稿作成開始');
+                  await handleCreatePost('これはテスト投稿です。投稿機能が正常に動作しているかを確認するためのサンプルテキストです。');
+                }}
+                className="px-2 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                テスト投稿
+              </button>
+            )}
+            <span className={`${textSizes.count} text-gray-500`}>
+              {isMobile ? `${sortedPosts.length}件` : `${sortedPosts.length}件の投稿`}
+            </span>
+          </div>
         </div>
       </div>
 

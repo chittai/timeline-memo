@@ -33,8 +33,12 @@ export function usePosts() {
 
   // 新規投稿の作成
   const createPost = useCallback(async (content: string): Promise<Post | null> => {
+    console.log('usePosts.createPost 開始:', content);
     const newPost = await executeAsync(
-      () => dataService.createPost(content),
+      () => {
+        console.log('dataService.createPost 呼び出し:', content);
+        return dataService.createPost(content);
+      },
       {
         loadingMessage: '投稿を作成しています...',
         errorTitle: '投稿の作成に失敗しました',
@@ -42,7 +46,9 @@ export function usePosts() {
       }
     );
     
+    console.log('executeAsync 結果:', newPost);
     if (newPost) {
+      console.log('dispatch ADD_POST:', newPost);
       dispatch({ type: 'ADD_POST', payload: newPost });
     }
     
@@ -120,6 +126,7 @@ export function usePosts() {
 
   // アプリ初期化時に投稿を読み込み
   useEffect(() => {
+    console.log('usePosts: 初期化開始');
     loadPosts();
   }, [loadPosts]);
 

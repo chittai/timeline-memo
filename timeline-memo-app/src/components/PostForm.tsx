@@ -21,17 +21,23 @@ export function PostForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('PostForm.handleSubmit 開始:', content);
     
     if (!content.trim()) {
+      console.log('PostForm: コンテンツが空のため送信をスキップ');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      console.log('PostForm: onSubmit 呼び出し:', content.trim());
       await onSubmit(content.trim());
       if (!isEditing) {
         setContent(''); // 新規作成の場合のみクリア
       }
+      console.log('PostForm: 送信完了');
+    } catch (error) {
+      console.error('PostForm: 送信エラー:', error);
     } finally {
       setIsSubmitting(false);
     }

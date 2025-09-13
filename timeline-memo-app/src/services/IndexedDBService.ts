@@ -179,7 +179,9 @@ export class IndexedDBService implements DataService {
 
   async createPost(content: string): Promise<Post> {
     try {
+      console.log('IndexedDBService.createPost 開始:', content);
       await this.ensureConnection();
+      console.log('データベース接続確認完了');
       
       // バリデーション
       if (!content || content.trim().length === 0) {
@@ -215,6 +217,7 @@ export class IndexedDBService implements DataService {
 
         request.onsuccess = () => {
           this.log('info', '投稿を作成しました', { postId: post.id });
+          console.log('IndexedDBService.createPost 成功:', post);
           resolve(post);
         };
 
