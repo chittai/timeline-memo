@@ -1,6 +1,5 @@
 import React, { type ReactElement } from 'react';
 import { render, type RenderOptions, screen, waitFor } from '@testing-library/react';
-import { expect } from '@jest/globals';
 import { AppProvider } from '../../context/AppContext';
 
 /**
