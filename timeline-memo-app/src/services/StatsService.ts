@@ -50,7 +50,7 @@ export class StatsService {
    * @returns 統計情報
    */
   static calculateDiaryStats(posts: Post[]): DiaryStats {
-    let partialStats: Partial<DiaryStats> = {};
+    const partialStats: Partial<DiaryStats> = {};
     
     try {
       if (posts.length === 0) {

@@ -24,7 +24,7 @@ function PostApp() {
       await createPost(content);
       success('投稿完了', '新しい投稿を作成しました');
       setShowForm(false);
-    } catch (err) {
+    } catch {
       error('投稿失敗', '投稿の作成に失敗しました');
     }
   };
@@ -37,7 +37,7 @@ function PostApp() {
       await updatePost(editingPost.id, content);
       success('更新完了', '投稿を更新しました');
       setEditingPost(null);
-    } catch (err) {
+    } catch {
       error('更新失敗', '投稿の更新に失敗しました');
     }
   };
@@ -47,7 +47,7 @@ function PostApp() {
     try {
       await deletePost(postId);
       success('削除完了', '投稿を削除しました');
-    } catch (err) {
+    } catch {
       error('削除失敗', '投稿の削除に失敗しました');
     }
   };

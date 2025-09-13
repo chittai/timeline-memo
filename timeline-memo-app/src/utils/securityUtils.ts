@@ -41,7 +41,7 @@ export const sanitizeHtml = (html: string): string => {
  */
 export const sanitizeMarkdown = (markdown: string): string => {
   // 基本的な文字列サニタイズ
-  let sanitized = markdown
+  const sanitized = markdown
     // HTMLタグをエスケープ（Markdownとして許可されていないもの）
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')

@@ -205,7 +205,7 @@ export class DiaryService implements IDiaryService {
    * @returns 統計情報
    */
   async getStats(): Promise<DiaryStats> {
-    let partialStats: Partial<DiaryStats> = {};
+    const partialStats: Partial<DiaryStats> = {};
     
     try {
       // 全ての投稿を取得

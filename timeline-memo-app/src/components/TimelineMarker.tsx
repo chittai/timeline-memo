@@ -55,7 +55,7 @@ const TimelineMarker: React.FC<TimelineMarkerProps> = ({
     const checkTouchDevice = () => {
       const hasTouch = 'ontouchstart' in window || 
                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
-                      (navigator as any).msMaxTouchPoints > 0;
+                      ('msMaxTouchPoints' in navigator && (navigator as { msMaxTouchPoints: number }).msMaxTouchPoints > 0);
       setDetectedTouchDevice(hasTouch);
     };
     

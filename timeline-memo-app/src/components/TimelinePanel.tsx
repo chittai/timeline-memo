@@ -22,7 +22,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({
   selectedPostId,
   highlightedPostIds = [],
   onPostSelect,
-  onScrollChange: _onScrollChange,
+  onScrollChange,
   onHighlightChange
 }) => {
   // パフォーマンス監視

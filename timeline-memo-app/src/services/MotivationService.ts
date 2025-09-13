@@ -146,7 +146,7 @@ export class MotivationService {
     const now = new Date();
     const monthName = `${year}年${month}月`;
     
-    let title = `${monthName}のサマリー`;
+    const title = `${monthName}のサマリー`;
     let message = '';
 
     if (monthlyPostCount === 0) {
