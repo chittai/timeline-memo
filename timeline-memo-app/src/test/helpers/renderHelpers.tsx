@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
-import { render, RenderOptions, screen, waitFor } from '@testing-library/react';
+import React, { type ReactElement } from 'react';
+import { render, type RenderOptions, screen, waitFor } from '@testing-library/react';
+import { expect } from '@jest/globals';
 import { AppProvider } from '../../context/AppContext';
-import type { AppState } from '../../types';
 
 /**
  * AppContextでラップしたカスタムレンダー関数
@@ -78,11 +78,10 @@ export const findByTextAndAssertVisible = async (
   options?: { timeout?: number; exact?: boolean }
 ): Promise<HTMLElement> => {
   const element = await screen.findByText(text, {
-    timeout: options?.timeout || 5000,
     exact: options?.exact
   });
   
-  await waitForElementToBeVisible(element);
+  await waitForElementToBeVisible(element, options?.timeout);
   return element;
 };
 
@@ -127,8 +126,7 @@ export const assertElementNotExists = (
  * ローディング状態の表示を確認する関数
  */
 export const assertLoadingState = async (
-  isLoading: boolean,
-  loadingSelector = '[data-testid="loading"]'
+  isLoading: boolean
 ): Promise<void> => {
   if (isLoading) {
     const loadingElement = await screen.findByTestId('loading');
@@ -144,8 +142,7 @@ export const assertLoadingState = async (
  * エラー状態の表示を確認する関数
  */
 export const assertErrorState = async (
-  errorMessage?: string,
-  errorSelector = '[data-testid="error"]'
+  errorMessage?: string
 ): Promise<void> => {
   const errorElement = await screen.findByTestId('error');
   await waitForElementToBeVisible(errorElement);
@@ -159,8 +156,7 @@ export const assertErrorState = async (
  * 空状態の表示を確認する関数
  */
 export const assertEmptyState = async (
-  emptyMessage?: string,
-  emptySelector = '[data-testid="empty-state"]'
+  emptyMessage?: string
 ): Promise<void> => {
   const emptyElement = await screen.findByTestId('empty-state');
   await waitForElementToBeVisible(emptyElement);
